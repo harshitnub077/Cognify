@@ -3,3 +3,4 @@
 A chronological log of technical milestones, optimizations, and documentation updates across 2025.
 
 <!-- [2025-12-01T12:10:17+05:30] docs: document browser extension messaging protocol in roadmap -->
+<!-- [2025-12-01T14:05:34+05:30] feat: add session expiration warning banner in content script -->
