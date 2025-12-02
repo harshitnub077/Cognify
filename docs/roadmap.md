@@ -12,3 +12,4 @@ A chronological log of technical milestones, optimizations, and documentation up
 <!-- [2025-12-02T13:42:51+05:30] style: polish extension popup typography and spacing tokens -->
 <!-- [2025-12-02T14:51:08+05:30] perf: cache active tab categorization to reduce API calls -->
 <!-- [2025-12-02T16:00:25+05:30] fix: resolve z-index conflict with third-party social media overlays -->
+<!-- [2025-12-02T17:09:42+05:30] refactor: clean up message passing handlers between background and content scripts -->
