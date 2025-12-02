@@ -7,3 +7,4 @@ A chronological log of technical milestones, optimizations, and documentation up
 <!-- [2025-12-01T16:00:51+05:30] refactor: extract URL classification helper in extension utils -->
 <!-- [2025-12-01T17:55:08+05:30] perf: optimize DOM observer throttling on infinite scroll feeds -->
 <!-- [2025-12-01T19:50:25+05:30] docs: update extension packaging and installation roadmap -->
+<!-- [2025-12-02T11:24:17+05:30] docs: document NLP summarization service pipeline architecture -->
