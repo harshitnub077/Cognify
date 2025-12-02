@@ -14,3 +14,4 @@ A chronological log of technical milestones, optimizations, and documentation up
 <!-- [2025-12-02T16:00:25+05:30] fix: resolve z-index conflict with third-party social media overlays -->
 <!-- [2025-12-02T17:09:42+05:30] refactor: clean up message passing handlers between background and content scripts -->
 <!-- [2025-12-02T18:18:59+05:30] test: add unit tests for text chunking and sanitization helpers -->
+<!-- [2025-12-02T19:27:16+05:30] style: standardize button active state styling across popup views -->
