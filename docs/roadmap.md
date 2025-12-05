@@ -17,3 +17,4 @@ A chronological log of technical milestones, optimizations, and documentation up
 <!-- [2025-12-02T19:27:16+05:30] style: standardize button active state styling across popup views -->
 <!-- [2025-12-02T20:36:33+05:30] docs: finalize Q4 extension release roadmap and distribution checklist -->
 <!-- [2025-12-05T11:20:15+05:30] docs: document extension session messaging flow in roadmap -->
+<!-- [2025-12-05T15:40:30+05:30] feat: add session timeout warning banner in content script -->
