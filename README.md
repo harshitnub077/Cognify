@@ -1,1 +1,1 @@
-# Cognify is the nw change
+# Cognify is the nw change.
