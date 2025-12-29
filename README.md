@@ -1,1 +1,1 @@
-# Cognify
+# Cognify.
