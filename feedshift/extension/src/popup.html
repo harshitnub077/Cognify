@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FeedShift</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #378ADD;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --bg: #ffffff;
+      --surface: #f9fafb;
+      --text: #1a1a1a;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 320px;
+      min-height: 400px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ── Layout Containers ── */
+    #main-view, #settings-panel {
+      width: 320px;
+      padding: 16px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #settings-panel {
+      transform: translateX(100%);
+      background: var(--bg);
+      min-height: 100vh;
+      border-left: 1px solid var(--border);
+      z-index: 10;
+    }
+    body.show-settings #main-view { transform: translateX(-100%); }
+    body.show-settings #settings-panel { transform: translateX(0); }
+
+    .section {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    /* ── Header & Settings Icon ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .logo { font-weight: 800; font-size: 18px; color: var(--text); }
+    .logo span { color: var(--primary); }
+    .icon-btn {
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; padding: 4px; border-radius: 4px;
+    }
+    .icon-btn:hover { background: var(--surface); color: var(--text); }
+
+    /* ── Mode Toggle (Section 1) ── */
+    .mode-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .toggle-wrapper {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; margin-bottom: 12px;
+    }
+    .toggle-label { font-size: 16px; font-weight: 700; margin-right: 12px; }
+    .switch {
+      position: relative; display: inline-block; width: 48px; height: 26px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #d1d5db; transition: .3s; border-radius: 26px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 20px; width: 20px;
+      left: 3px; bottom: 3px; background-color: white; transition: .3s;
+      border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    input:checked + .slider { background-color: var(--success); }
+    input:checked + .slider:before { transform: translateX(22px); }
+    
+    .status-pill {
+      font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+      display: inline-block; transition: all 0.2s;
+    }
+    .status-pill.active { background: #dcfce7; color: #166534; }
+    .status-pill.paused { background: #f3f4f6; color: #4b5563; }
+
+    /* ── Stats (Section 2) ── */
+    .stats-row {
+      display: flex; gap: 8px;
+    }
+    .stat-box {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 4px; text-align: center;
+    }
+    .stat-val { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+    .stat-label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; }
+
+    /* ── Quick Controls & UI lists ── */
+    .list-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.05em; }
+    .control-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; font-size: 13px; font-weight: 500;
+    }
+    .control-row:last-child { margin-bottom: 0; }
+    .small-switch { width: 34px; height: 18px; }
+    .small-switch .slider:before { height: 14px; width: 14px; left: 2px; bottom: 2px; }
+    .small-switch input:checked + .slider:before { transform: translateX(16px); }
+
+    /* ── Page Info (Section 4) ── */
+    .page-info-box {
+      background: var(--surface); border-radius: 8px; padding: 12px;
+      font-size: 13px;
+    }
+    .page-type { font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .page-stats { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; }
+
+    /* ── Links (Section 5) ── */
+    .link-btn {
+      display: block; width: 100%; text-align: left; padding: 10px 12px;
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer;
+      margin-bottom: 8px; transition: background 0.2s; text-decoration: none;
+    }
+    .link-btn:hover { background: var(--surface); }
+
+    /* ── Settings Panel ── */
+    .panel-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+      font-size: 16px; font-weight: 700;
+    }
+    .back-btn {
+      background: none; border: none; cursor: pointer; color: var(--text); padding: 4px;
+    }
+    
+    .setting-group { margin-bottom: 20px; }
+    .setting-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+    input[type="range"] { width: 100%; accent-color: var(--primary); }
+    
+    .action-btn {
+      width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--surface); color: var(--text); font-size: 13px; font-weight: 500;
+      cursor: pointer; margin-bottom: 8px; text-align: center;
+    }
+    .action-btn.danger { color: var(--danger); border-color: #fca5a5; background: #fef2f2; }
+    .action-btn:hover { opacity: 0.8; }
+    
+    #fileInput { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- MAIN VIEW -->
+  <div id="main-view">
+    <div class="header">
+      <div class="logo">Feed<span>Shift</span></div>
+      <button class="icon-btn" id="btnSettings" aria-label="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
+
+    <!-- Section 1: Mode -->
+    <div class="section">
+      <div class="mode-container">
+        <div class="toggle-wrapper">
+          <span class="toggle-label">Study Mode</span>
+          <label class="switch">
+            <input type="checkbox" id="studyModeToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="studyModeStatus" class="status-pill paused">Paused — all content visible</div>
+      </div>
+    </div>
+
+    <!-- Section 2: Stats -->
+    <div class="section">
+      <div class="list-title">Today's Content Diet</div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-val" id="statStudyTime">0h 0m</div>
+          <div class="stat-label">Study</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statBlocked">0</div>
+          <div class="stat-label">Blocked</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statSignals">0</div>
+          <div class="stat-label">Signals</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Quick Controls -->
+    <div class="section">
+      <div class="list-title">Quick Controls</div>
+      <div class="control-row">
+        <span>Block Shorts completely</span>
+        <label class="switch small-switch">
+          <input type="checkbox" id="blockShortsToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="control-row">
+        <span>Show blocked videos (temporarily)</span>
+        <label class="switch small-switch">
+          <input type="checkbox" id="revealToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Section 4: Page Info -->
+    <div class="section">
+      <div class="page-info-box">
+        <div class="page-type">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>
+          <span id="pageTypeLabel">Detecting page...</span>
+        </div>
+        <div class="page-stats">
+          <span id="pageProcessedCount">0 processed</span>
+          <span id="pageBlockedCount" style="color: var(--danger); font-weight:600;">0 blocked</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Links -->
+    <div class="section" style="border:none; padding:0;">
+      <button class="link-btn" id="btnEditProfile">Edit my profile</button>
+      <a href="http://localhost:3000/dashboard" target="_blank" class="link-btn">View full dashboard</a>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div id="settings-panel">
+    <div class="panel-header">
+      <button class="back-btn" id="btnBack">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      </button>
+      Settings
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-label">
+        <span>Entertainment Tolerance</span>
+        <span id="entTolVal" style="color: var(--primary);">10%</span>
+      </div>
+      <input type="range" id="quickEntSlider" min="0" max="50" value="10">
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Adjust strictness instantly</div>
+    </div>
+
+    <div class="setting-group" style="border-top:1px solid var(--border); padding-top:16px;">
+      <button class="action-btn" id="btnResetTrust">Reset Channel Trust Scores</button>
+      <button class="action-btn" id="btnExport">Export Profile (.json)</button>
+      <button class="action-btn" id="btnImport">Import Profile</button>
+      <input type="file" id="fileInput" accept=".json">
+    </div>
+
+    <div class="setting-group" style="border-top:1px solid var(--border); padding-top:16px;">
+      <div class="control-row">
+        <span>Developer Mode</span>
+        <label class="switch small-switch">
+          <input type="checkbox" id="devModeToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Shows classification layer logs</div>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
