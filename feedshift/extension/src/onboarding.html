@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FeedShift Onboarding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #378ADD;
+      --primary-light: #E6F1FB;
+      --success: #639922;
+      --bg: #ffffff;
+      --text: #1a1a1a;
+      --text-muted: #6b7280;
+      --border: rgba(0,0,0,0.1);
+      --surface: #f9fafb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+    }
+
+    /* ── Progress Bar ── */
+    .progress-wrapper {
+      margin-bottom: 48px;
+    }
+    .progress-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .progress-bar {
+      display: flex;
+      gap: 8px;
+    }
+    .progress-segment {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 999px;
+      transition: background 0.3s ease;
+    }
+    .progress-segment.active {
+      background: var(--primary);
+    }
+
+    /* ── Steps Container ── */
+    .step {
+      display: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .step.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    /* ── Tags (Step 1) ── */
+    .tags-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .tag {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tag:hover {
+      border-color: var(--primary);
+    }
+    .tag.selected {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .custom-tag-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .input-field {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-field:focus {
+      border-color: var(--primary);
+    }
+
+    /* ── Depth Selector (Step 2) ── */
+    .depth-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .depth-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .depth-topic {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .depth-options {
+      display: flex;
+      gap: 12px;
+    }
+    .depth-pill {
+      flex: 1;
+      text-align: center;
+      padding: 12px 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: all 0.2s;
+      position: relative;
+    }
+    .depth-pill.selected {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .depth-pill:hover .tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+    .tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 400;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ── Sliders (Step 3) ── */
+    .slider-group {
+      margin-bottom: 40px;
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .slider-label {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .slider-val {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .slider-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      height: 6px;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .slider-example {
+      font-size: 13px;
+      color: var(--text-muted);
+      background: var(--primary-light);
+      padding: 10px 14px;
+      border-radius: 6px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    /* ── Summary (Step 4) ── */
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .summary-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .summary-row {
+      display: flex;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .summary-row strong {
+      width: 180px;
+      color: var(--text-muted);
+    }
+    .json-preview {
+      margin-bottom: 32px;
+    }
+    .json-toggle {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    pre.code-block {
+      background: #111;
+      color: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      overflow-x: auto;
+      display: none;
+    }
+    pre.code-block.open {
+      display: block;
+    }
+
+    /* ── Buttons ── */
+    .nav-buttons {
+      display: flex;
+      gap: 16px;
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      text-align: center;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      flex: 1;
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    .btn-primary:disabled {
+      background: var(--border);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      width: 120px;
+    }
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+      flex: 1;
+      font-size: 18px;
+      padding: 16px 24px;
+    }
+    .btn-success:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="progress-wrapper">
+      <div class="progress-text" id="progressText">Step 1 of 4</div>
+      <div class="progress-bar">
+        <div class="progress-segment active" id="p1"></div>
+        <div class="progress-segment" id="p2"></div>
+        <div class="progress-segment" id="p3"></div>
+        <div class="progress-segment" id="p4"></div>
+      </div>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step active" id="step1">
+      <h1>What do you want to focus on?</h1>
+      <p class="subtitle">Select the topics you want to see more of in your feed. FeedShift will filter out everything else.</p>
+      
+      <div class="tags-grid" id="tagsGrid"></div>
+      
+      <div class="custom-tag-row">
+        <input type="text" id="customTagInput" class="input-field" placeholder="Add your own interest (e.g. React.js, Origami)">
+        <button class="btn btn-secondary" id="addCustomTagBtn">Add</button>
+      </div>
+
+      <div class="nav-buttons">
+        <button class="btn btn-primary" id="btnNext1" disabled>Next Step →</button>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step" id="step2">
+      <h1>How deep do you want to go?</h1>
+      <p class="subtitle">Set the technical depth for each of your selected interests.</p>
+      
+      <div class="depth-list" id="depthList"></div>
+
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" id="btnBack2">← Back</button>
+        <button class="btn btn-primary" id="btnNext2">Next Step →</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step" id="step3">
+      <h1>How strict should your filter be?</h1>
+      <p class="subtitle">Fine-tune the algorithm's boundaries.</p>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <div class="slider-label">Entertainment Tolerance</div>
+          <div class="slider-val" id="entVal">10%</div>
+        </div>
+        <div class="slider-desc">How much purely entertaining/off-topic content is okay?</div>
+        <input type="range" id="entSlider" min="0" max="50" value="10">
+        <div class="slider-example" id="entExample">At 10%, you'll see a fun video maybe once every 10 videos.</div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <div class="slider-label">Related Content</div>
+          <div class="slider-val" id="relVal">30%</div>
+        </div>
+        <div class="slider-desc">Allow tangentially related videos outside your core interests?</div>
+        <input type="range" id="relSlider" min="0" max="80" value="30">
+        <div class="slider-example" id="relExample">At 30%, strict alignment is preferred, with occasional broad recommendations.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">What's your goal? (Optional)</label>
+        <input type="text" id="goalText" class="input-field" placeholder="e.g. Prepare for GATE 2026, Learn web dev">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Target Date (Optional)</label>
+        <input type="date" id="goalDate" class="input-field">
+      </div>
+
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" id="btnBack3">← Back</button>
+        <button class="btn btn-primary" id="btnNext3">Review Profile →</button>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step" id="step4">
+      <h1>You're all set</h1>
+      <p class="subtitle">Review your content profile before activating FeedShift.</p>
+
+      <div class="summary-card" id="summaryCard"></div>
+
+      <div class="json-preview">
+        <button class="json-toggle" id="jsonToggle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          View raw JSON profile
+        </button>
+        <pre class="code-block" id="jsonBlock"></pre>
+      </div>
+
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" id="btnBack4">← Back</button>
+        <button class="btn btn-success" id="btnActivate">Activate FeedShift</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="onboarding.js"></script>
+</body>
+</html>
