@@ -1,0 +1,22 @@
+{
+  "name": "feedshift",
+  "version": "1.0.0",
+  "description": "FeedShift monorepo — Chrome Extension + Node.js Backend + Next.js Dashboard",
+  "private": true,
+  "workspaces": [
+    "extension",
+    "backend",
+    "dashboard",
+    "shared"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:dashboard": "npm run dev --workspace=dashboard",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:dashboard\"",
+    "install:all": "npm install --workspaces",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
