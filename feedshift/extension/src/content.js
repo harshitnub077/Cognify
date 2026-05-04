@@ -33,30 +33,8 @@ const SELECTORS = {
 };
 
 // ── Topic Keyword Expansion Map ──────────────────────────────────────
-// Maps broad interest topics → related keywords that should be ALLOWED
-const TOPIC_KEYWORD_MAP = {
-  'machine learning': ['machine learning', 'ml', 'neural network', 'deep learning', 'tensorflow', 'pytorch', 'sklearn', 'scikit', 'gradient descent', 'backpropagation', 'transformer', 'llm', 'gpt', 'bert', 'regression', 'classification', 'clustering', 'supervised', 'unsupervised', 'reinforcement learning', 'random forest', 'xgboost', 'feature engineering', 'model training', 'overfitting', 'hyperparameter', 'embedding', 'attention mechanism', 'diffusion model', 'generative ai', 'nlp', 'computer vision', 'cnn', 'rnn', 'lstm', 'autoencoder'],
-  'artificial intelligence': ['artificial intelligence', 'ai', 'machine learning', 'deep learning', 'neural', 'gpt', 'llm', 'chatgpt', 'openai', 'generative', 'nlp', 'computer vision', 'robotics', 'automation', 'algorithm'],
-  'mathematics': ['mathematics', 'math', 'calculus', 'algebra', 'linear algebra', 'statistics', 'probability', 'theorem', 'proof', 'equation', 'integral', 'derivative', 'matrix', 'vector', 'topology', 'geometry', 'number theory', 'discrete math', 'differential', 'fourier', 'stochastic', 'combinatorics', 'trigonometry'],
-  'math': ['math', 'calculus', 'algebra', 'statistics', 'probability', 'geometry', 'theorem', 'equation', 'integral', 'derivative', 'matrix', 'vector', 'linear algebra', 'trigonometry'],
-  'computer science': ['computer science', 'cs', 'algorithm', 'data structure', 'programming', 'software', 'operating system', 'networking', 'database', 'complexity', 'big o', 'sorting', 'graph theory', 'recursion', 'dynamic programming', 'binary', 'compiler', 'system design', 'distributed system', 'cloud computing', 'devops', 'linux'],
-  'programming': ['programming', 'coding', 'code', 'developer', 'software', 'python', 'javascript', 'typescript', 'java', 'c++', 'rust', 'golang', 'react', 'nextjs', 'node', 'api', 'backend', 'frontend', 'fullstack', 'web dev', 'tutorial', 'debug', 'refactor', 'github', 'git', 'open source', 'framework', 'library'],
-  'python': ['python', 'django', 'flask', 'fastapi', 'pandas', 'numpy', 'matplotlib', 'jupyter', 'pip', 'conda', 'asyncio', 'pydantic', 'sqlalchemy'],
-  'javascript': ['javascript', 'js', 'typescript', 'react', 'vue', 'angular', 'node', 'next.js', 'nextjs', 'express', 'webpack', 'vite', 'dom', 'async', 'promise', 'es6'],
-  'physics': ['physics', 'quantum', 'relativity', 'mechanics', 'thermodynamics', 'electromagnetism', 'optics', 'wave', 'particle', 'force', 'energy', 'momentum', 'entropy', 'spacetime', 'gravity', 'nuclear', 'astrophysics', 'cosmology', 'string theory', 'feynman'],
-  'software engineering': ['software engineering', 'system design', 'architecture', 'design pattern', 'solid principles', 'clean code', 'refactoring', 'microservice', 'api design', 'ci/cd', 'testing', 'unit test', 'devops', 'agile', 'scrum', 'code review'],
-  'data science': ['data science', 'data analysis', 'pandas', 'numpy', 'visualization', 'matplotlib', 'seaborn', 'tableau', 'sql', 'big data', 'spark', 'hadoop', 'etl', 'dashboard', 'analytics', 'insight', 'dataset', 'kaggle'],
-  'philosophy': ['philosophy', 'ethics', 'epistemology', 'metaphysics', 'logic', 'consciousness', 'existentialism', 'stoicism', 'nietzsche', 'kant', 'plato', 'aristotle', 'socrates', 'determinism', 'free will', 'moral', 'virtue', 'reason'],
-  'history': ['history', 'historical', 'ancient', 'medieval', 'civilization', 'empire', 'war', 'revolution', 'century', 'archaeology', 'documentary', 'culture', 'dynasty', 'colonial', 'world war'],
-  'productivity': ['productivity', 'time management', 'focus', 'deep work', 'habit', 'morning routine', 'goal setting', 'pomodoro', 'study tips', 'workflow', 'organization', 'efficiency', 'discipline', 'self improvement', 'mindset'],
-  'entrepreneurship': ['entrepreneurship', 'startup', 'business', 'founder', 'venture capital', 'vc', 'pitch', 'product market fit', 'saas', 'revenue', 'growth hacking', 'marketing', 'branding', 'investment', 'fundraising'],
-  'design': ['design', 'ui', 'ux', 'user interface', 'figma', 'adobe', 'typography', 'color theory', 'wireframe', 'prototype', 'user experience', 'graphic design', 'product design', 'css', 'animation', 'visual'],
-  'neuroscience': ['neuroscience', 'brain', 'neuron', 'cognition', 'cognitive', 'memory', 'learning', 'consciousness', 'neural', 'synapse', 'dopamine', 'serotonin', 'psychology', 'behavior', 'perception'],
-  'finance': ['finance', 'investing', 'stock', 'market', 'portfolio', 'dividend', 'index fund', 'etf', 'valuation', 'financial', 'economics', 'compound interest', 'asset', 'equity', 'bond', 'cryptocurrency', 'blockchain'],
-  'chemistry': ['chemistry', 'organic chemistry', 'reaction', 'molecule', 'element', 'periodic table', 'bond', 'acid', 'base', 'polymer', 'biochemistry', 'thermochemistry'],
-  'biology': ['biology', 'cell', 'genetics', 'dna', 'rna', 'protein', 'evolution', 'ecology', 'microbiology', 'anatomy', 'physiology', 'organism', 'species', 'genome', 'crispr'],
-  'economics': ['economics', 'macroeconomics', 'microeconomics', 'gdp', 'inflation', 'monetary policy', 'fiscal', 'supply', 'demand', 'market', 'keynesian', 'game theory'],
-};
+// Deprecated in Extension: We now rely on the powerful V2 AI Engine on the backend.
+// Broad local keywords like "market" or "cell" were causing bad videos to slip through.
 
 // ── Always-block distraction signals ─────────────────────────────────
 const HARD_BLOCK_KEYWORDS = [
@@ -293,34 +271,29 @@ async function classifyVideo(video, profile) {
     }
   }
 
-  // Layer 5: STRICT INTEREST MATCH — check against expanded keyword map
+  // Layer 5: Exact string match for active goals (extremely strict local fallback)
   const interests = profile.interests || [];
   for (const interest of interests) {
     const topicName = (interest.topic || interest).toLowerCase().trim();
-    // Get expanded keywords from the map, or fall back to just the topic name
-    const expandedKeywords = TOPIC_KEYWORD_MAP[topicName] || [topicName];
-    for (const kw of expandedKeywords) {
-      if (fullText.includes(kw)) {
-        return { verdict: 'ALLOW', reason: `Interest match: "${kw}" (${topicName})` };
-      }
+    if (topicName.length > 3 && fullText.includes(topicName)) {
+      return { verdict: 'ALLOW', reason: `Exact interest match: "${topicName}"` };
     }
   }
 
-  // Layer 6: Backend AI (if backend is running and we haven't hit the cap)
-  if (aiCallsThisSession < 20) {
-    try {
-      const resp = await fetch('http://localhost:3001/classify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoMetadata: video, profileSnapshot: profile }),
-        signal: AbortSignal.timeout(3000)
-      });
-      if (resp.ok) {
-        const result = await resp.json();
-        aiCallsThisSession++;
-        return { verdict: result.verdict, reason: result.reason || 'AI classified' };
-      }
-    } catch(e) {}
+  // Layer 6: Backend AI Engine
+  try {
+    const resp = await fetch('http://localhost:3001/classify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoMetadata: video, profileSnapshot: profile }),
+      signal: AbortSignal.timeout(3500)
+    });
+    if (resp.ok) {
+      const result = await resp.json();
+      return { verdict: result.verdict, reason: result.reason || 'AI classified' };
+    }
+  } catch(e) {
+    console.warn('[FeedShift] AI Engine unreachable or timed out. Falling back to BLOCK.');
   }
 
   // ⚡ DEFAULT: BLOCK — if we can't confirm it matches your interests, it doesn't belong in your feed.

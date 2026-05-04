@@ -85,18 +85,42 @@ export async function preComputeInterestEmbeddings(interests) {
 export async function semanticClassify(video, profileSnapshot) {
   const { interestEmbeddings = {} } = profileSnapshot;
   
-  if (!openai || Object.keys(interestEmbeddings).length === 0) {
-    // No embeddings available — return null to fall through to other layers
-    return null;
-  }
-
   // Build rich text from all available video metadata
   const videoText = [
     video.title,
     video.channelName,
     video.description?.substring(0, 400) || '',
     (video.tags || []).slice(0, 15).join(' '),
-  ].join(' ').trim();
+  ].join(' ').trim().toLowerCase();
+
+  if (!openai || Object.keys(interestEmbeddings).length === 0) {
+    // FALLBACK: Local Heuristic using EXPANDED_TOPIC_KEYWORDS
+    console.log(`[SemanticClassifier] No embeddings. Using local heuristic for "${video.title}"`);
+    
+    // Distraction Check
+    const distractions = ['prank', 'vlog', 'funny', 'fail', 'reaction', 'drama', 'gossip', 'celebrity', 'tiktok', 'shorts', 'gaming', 'playthrough', 'unboxing', 'drama', 'beef'];
+    if (distractions.some(d => videoText.includes(d))) {
+      return { verdict: 'BLOCK', confidence: 0.9, reason: 'Matched distraction pattern (Heuristic)', topicMatch: 'None' };
+    }
+
+    // Match Interests
+    for (const interest of profileSnapshot.interests || []) {
+      const topic = (interest.topic || interest).toLowerCase();
+      const keywords = EXPANDED_TOPIC_KEYWORDS[topic] || [topic];
+      
+      let matchCount = 0;
+      for (const kw of keywords) {
+        if (videoText.includes(kw)) matchCount++;
+      }
+      
+      if (matchCount >= 2 || (matchCount >= 1 && videoText.includes(topic))) {
+        return { verdict: 'ALLOW', confidence: 0.8, reason: `Matched keywords for ${topic} (Heuristic)`, topicMatch: topic };
+      }
+    }
+
+    // If it reaches here, local heuristic is unsure.
+    return null;
+  }
 
   const videoEmbedding = await embedText(videoText);
   if (!videoEmbedding) return null;
