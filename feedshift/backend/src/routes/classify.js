@@ -3,9 +3,9 @@ import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
 // V2 Engine Services
-import { semanticClassify, EXPANDED_TOPIC_KEYWORDS } from '../services/semanticClassifier.js';
+import { semanticClassify } from '../services/semanticClassifier.js';
 import { enrichVideoMetadata } from '../services/youtubeEnricher.js';
-import { classifyWithAgent } from '../agents/classificationAgent.js';
+import { classifyWithAgent, classifyBatchWithAgent } from '../agents/classificationAgent.js';
 import { analyzeThumbnail } from '../agents/visionAgent.js';
 import { computeFinalVerdict } from '../services/scoreFusion.js';
 
@@ -76,7 +76,8 @@ router.post('/', async (req, res) => {
       llm: llmResult,
       vision: visionResult,
       ytCategory: fullMeta.category,
-      channelTrust: channelTrust[fullMeta.channelName?.toLowerCase()] || 50
+      channelTrust: channelTrust[fullMeta.channelName?.toLowerCase()] || 50,
+      tolerance: profileSnapshot.tolerance
     });
 
     const finalResult = {
@@ -117,5 +118,101 @@ function logToSupabase(userId, videoId, meta, result) {
       }
     }).catch(() => {});
 }
+
+/**
+ * POST /classify-batch
+ * Accepts an array of videos to massively reduce LLM token usage and rate limits.
+ */
+router.post('/classify-batch', async (req, res) => {
+  try {
+    const { videos, profileSnapshot } = req.body;
+    if (!Array.isArray(videos) || !profileSnapshot) {
+      return res.status(400).json({ error: 'Invalid batch request' });
+    }
+
+    const { userId, interests, channelTrust = {} } = profileSnapshot;
+    const finalResults = {};
+    const videosNeedingAI = [];
+
+    // Phase 1: Try Cache & Local Semantic Check for each video
+    for (const video of videos) {
+      const videoId = video.videoId || `unknown_${Math.random()}`;
+      video.videoId = videoId; // ensure it has an ID
+
+      const cacheKey = generateCacheKey(videoId, userId, interests);
+      const cachedResult = classificationCache.get(cacheKey);
+
+      if (cachedResult && Date.now() < cachedResult.expiresAt) {
+        finalResults[videoId] = { ...cachedResult, fromCache: true };
+        continue;
+      }
+
+      // Fast Semantic Layer
+      const semanticResult = await semanticClassify(video, profileSnapshot);
+      if (semanticResult) {
+        // High confidence short-circuit
+        const result = {
+          verdict: semanticResult.verdict,
+          confidence: semanticResult.confidence,
+          reason: semanticResult.reason,
+          topicMatch: semanticResult.topicMatch,
+        };
+        finalResults[videoId] = result;
+        logToSupabase(userId, videoId, video, result);
+        classificationCache.set(cacheKey, { ...result, expiresAt: Date.now() + CACHE_TTL });
+      } else {
+        videosNeedingAI.push({ video, cacheKey });
+      }
+    }
+
+    // Phase 2: Send remaining videos to the LLM agent in ONE batch!
+    if (videosNeedingAI.length > 0) {
+      // Groq limits to 6000 TPM. Process chunks sequentially with delays.
+      for (let i = 0; i < videosNeedingAI.length; i += 8) {
+        // Wait between chunks to respect TPM (skip first chunk)
+        if (i > 0) {
+          console.log('[Classify Batch] Waiting 4s between chunks to respect rate limits...');
+          await new Promise(r => setTimeout(r, 4000));
+        }
+        const chunk = videosNeedingAI.slice(i, i + 8);
+        const chunkVideos = chunk.map(v => v.video);
+
+        // Fetch AI Results
+        const aiBatchResults = await classifyBatchWithAgent(chunkVideos, profileSnapshot);
+
+        for (const { video, cacheKey } of chunk) {
+          const videoId = video.videoId;
+          const llmResult = aiBatchResults[videoId] || { verdict: 'BLOCK', confidence: 0.5, reason: 'AI omitted video' };
+          
+          const fusionResult = computeFinalVerdict({
+            semantic: { score: 0.5 },
+            llm: llmResult,
+            vision: { isClickbait: false, contentType: 'unknown' },
+            ytCategory: video.category,
+            channelTrust: channelTrust[video.channelName?.toLowerCase()] || 50,
+            tolerance: profileSnapshot.tolerance
+          });
+
+          const finalResult = {
+            verdict: fusionResult.verdict,
+            confidence: fusionResult.confidence,
+            reason: llmResult.reason || `Multi-signal score: ${fusionResult.confidence.toFixed(2)}`,
+            topicMatch: llmResult.topicMatch || 'None'
+          };
+
+          finalResults[videoId] = finalResult;
+          logToSupabase(userId, videoId, video, finalResult);
+          classificationCache.set(cacheKey, { ...finalResult, expiresAt: Date.now() + CACHE_TTL });
+        }
+      }
+    }
+
+    res.json(finalResults);
+
+  } catch (err) {
+    console.error('[Classify Batch] Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 export default router;

@@ -1,6 +1,6 @@
 import { EDUCATIONAL_CATEGORIES, ENTERTAINMENT_CATEGORIES } from './youtubeEnricher.js';
 
-export function computeFinalVerdict({ semantic, llm, vision, ytCategory, channelTrust }) {
+export function computeFinalVerdict({ semantic, llm, vision, ytCategory, channelTrust, tolerance }) {
   // Weighted score fusion
   const WEIGHTS = {
     semantic: 0.35,    // Semantic similarity to interests
@@ -28,9 +28,15 @@ export function computeFinalVerdict({ semantic, llm, vision, ytCategory, channel
     WEIGHTS.category * categoryScore +
     WEIGHTS.channelTrust * trustScore;
 
+  // Dynamic threshold based on user's tolerance setting (0-100)
+  // tolerance=0 → 0.70 (ultra strict), tolerance=50 → 0.55, tolerance=100 → 0.40
+  const tol = typeof tolerance === 'number' ? tolerance : 50;
+  const threshold = 0.40 + (0.30 * (1 - tol / 100));
+
   return {
-    verdict: finalScore >= 0.55 ? 'ALLOW' : 'BLOCK',
+    verdict: finalScore >= threshold ? 'ALLOW' : 'BLOCK',
     confidence: finalScore,
+    threshold,
     breakdown: { semanticScore, llmScore, visionScore, categoryScore, trustScore }
   };
 }

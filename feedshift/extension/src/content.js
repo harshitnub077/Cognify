@@ -21,7 +21,6 @@ let batchTimeout = null;
 
 // Cache state
 const sessionCache = new Map();
-let aiCallsThisSession = 0;
 
 const SELECTORS = {
   card: 'ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer',
@@ -47,6 +46,12 @@ const HARD_BLOCK_KEYWORDS = [
   'unboxing', 'haul', 'giveaway winner', 'girlfriend reveals', 'boyfriend reacts',
   'you wont believe', "you won't believe", 'shocking truth', '(gone wrong)',
   'storytime', 'day in my life', 'morning routine vlog', 'what i eat in a day',
+  // Regional + trending distraction patterns
+  'roast video', 'exposed video', 'reply to', 'vs battle',
+  'challenge accepted', 'insane reaction', 'free fire', 'bgmi',
+  'i quit', 'never again', 'not clickbait', '24 hour challenge',
+  'last to leave', 'first to', '$1 vs $1000',
+  'thugesh', 'carryminati roast', 'bigg boss',
 ];
 
 // ── Channels to always allow (trusted educational channels) ──────────
@@ -101,6 +106,13 @@ async function init() {
           removeShortsOverlay();
           document.querySelectorAll('[data-fs-verdict="BLOCK"]').forEach(el => {
             el.style.cssText = '';
+            const focusCard = el.querySelector('.fs-focus-card');
+            if (focusCard) focusCard.remove();
+            
+            const thumbnail = el.querySelector('ytd-thumbnail, .ytd-thumbnail');
+            const details = el.querySelector('#details');
+            if (thumbnail) thumbnail.style.filter = '';
+            if (details) details.style.filter = '';
           });
         }
       }
@@ -205,44 +217,85 @@ async function processBatch() {
   batchQueue = [];
   if (batch.length === 0) return;
 
-  await Promise.allSettled(batch.map(async ({ card, video }) => {
-    try {
-      const cacheKey = video.videoId || video.title;
-      let result;
+  const needsAI = [];
+  const finalResults = new Map(); // videoId -> result
 
-      if (sessionCache.has(cacheKey)) {
-        result = sessionCache.get(cacheKey);
-      } else {
-        result = await classifyVideo(video, profile);
-        if (sessionCache.size > 300) {
-          const firstKey = sessionCache.keys().next().value;
-          sessionCache.delete(firstKey);
-        }
-        sessionCache.set(cacheKey, result);
-      }
+  // 1. Check cache and local heuristics
+  for (const { card, video } of batch) {
+    // Ensure videoId is populated (fallback for weird UI states)
+    if (!video.videoId) video.videoId = `tmp_${Math.random()}`;
+    const cacheKey = video.videoId;
 
-      card.dataset.fsVerdict = result.verdict;
-      console.log(`[FeedShift] "${video.title.substring(0,40)}" → ${result.verdict} (${result.reason})`);
-
-      if (result.verdict === 'ALLOW') {
-        applyAllowUI(card);
-      } else {
-        applyBlockUI(card, video);
-      }
-
-      logContentDiet(video, result);
-    } catch (e) {
-      // swallow per-card errors
+    if (sessionCache.has(cacheKey)) {
+      finalResults.set(video.videoId, sessionCache.get(cacheKey));
+      continue;
     }
-  }));
+
+    const localResult = classifyVideoLocal(video, profile);
+    if (localResult) {
+      finalResults.set(video.videoId, localResult);
+      if (sessionCache.size > 300) sessionCache.delete(sessionCache.keys().next().value);
+      sessionCache.set(cacheKey, localResult);
+    } else {
+      needsAI.push({ card, video });
+    }
+  }
+
+  // 2. Call AI Batch Engine
+  if (needsAI.length > 0) {
+    try {
+      const resp = await fetch('http://localhost:3001/classify-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          videos: needsAI.map(item => item.video), 
+          profileSnapshot: profile 
+        }),
+        signal: AbortSignal.timeout(8000) // Slightly longer timeout for batching
+      });
+      
+      if (resp.ok) {
+        const aiResultsMap = await resp.json();
+        for (const { video } of needsAI) {
+          const res = aiResultsMap[video.videoId] || { verdict: 'BLOCK', reason: 'AI missed video' };
+          finalResults.set(video.videoId, res);
+          const cacheKey = video.videoId;
+          if (sessionCache.size > 300) sessionCache.delete(sessionCache.keys().next().value);
+          sessionCache.set(cacheKey, res);
+        }
+      } else {
+        throw new Error('API Rate Limit or Error');
+      }
+    } catch(e) {
+      console.warn('[FeedShift] AI Batch failed. Falling back to BLOCK.', e.message);
+      for (const { video } of needsAI) {
+        finalResults.set(video.videoId, { verdict: 'BLOCK', reason: 'AI Engine unreachable' });
+      }
+    }
+  }
+
+  // 3. Apply UI and Log
+  for (const { card, video } of batch) {
+    const result = finalResults.get(video.videoId);
+    if (!result) continue;
+
+    card.dataset.fsVerdict = result.verdict;
+    console.log(`[FeedShift] "${video.title.substring(0,40)}" → ${result.verdict} (${result.reason})`);
+
+    if (result.verdict === 'ALLOW') {
+      applyAllowUI(card);
+    } else {
+      applyBlockUI(card, video, result);
+    }
+    logContentDiet(video, result);
+  }
 }
 
-// ── Classification: STRICT ALLOWLIST ─────────────────────────────────
-// Default is BLOCK. Only ALLOW if content positively matches an interest.
-async function classifyVideo(video, profile) {
+// ── Classification: Local Pre-filter ─────────────────────────────────
+// Returns verdict if local rule matches, else null to defer to AI
+function classifyVideoLocal(video, profile) {
   const titleLower = video.title.toLowerCase();
   const channelLower = video.channel.toLowerCase();
-  // Full text: title + channel + description + all scraped text combined
   const fullText = video.fullText || titleLower;
 
   // Layer 1: Trusted channels (always allow)
@@ -280,24 +333,8 @@ async function classifyVideo(video, profile) {
     }
   }
 
-  // Layer 6: Backend AI Engine
-  try {
-    const resp = await fetch('http://localhost:3001/classify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoMetadata: video, profileSnapshot: profile }),
-      signal: AbortSignal.timeout(3500)
-    });
-    if (resp.ok) {
-      const result = await resp.json();
-      return { verdict: result.verdict, reason: result.reason || 'AI classified' };
-    }
-  } catch(e) {
-    console.warn('[FeedShift] AI Engine unreachable or timed out. Falling back to BLOCK.');
-  }
-
-  // ⚡ DEFAULT: BLOCK — if we can't confirm it matches your interests, it doesn't belong in your feed.
-  return { verdict: 'BLOCK', reason: 'No interest match found' };
+  // Defer to AI
+  return null;
 }
 
 // ── Rich Metadata Extractor ──────────────────────────────────────────
@@ -330,6 +367,10 @@ function extractVideoMeta(card) {
   const href = anchor?.getAttribute('href') || '';
   const videoIdMatch = href.match(/[?&]v=([^&]+)/);
 
+  // Extract thumbnail URL
+  const thumbnailImg = card.querySelector('ytd-thumbnail img, img.yt-core-image');
+  const thumbnailUrl = thumbnailImg?.src || (videoIdMatch?.[1] ? `https://i.ytimg.com/vi/${videoIdMatch[1]}/hqdefault.jpg` : null);
+
   // Build a combined lowercase search string from everything we can see
   const fullText = [title, channel, description, metadataParts, ariaLabel, allCardText]
     .join(' ')
@@ -343,6 +384,7 @@ function extractVideoMeta(card) {
     channel,
     channelName: channel,
     description,
+    thumbnailUrl,
     fullText,
   };
 }
@@ -360,13 +402,103 @@ function applyAllowUI(card) {
   }
 }
 
-function applyBlockUI(card) {
-  card.style.opacity = '0';
-  card.style.pointerEvents = 'none';
-  card.style.height = '0px';
-  card.style.overflow = 'hidden';
-  card.style.margin = '0';
-  card.style.padding = '0';
+function applyBlockUI(card, video, result) {
+  // Prevent duplicate overlays
+  if (card.querySelector('.fs-focus-card')) return;
+
+  // We keep the card's original layout but overlay a glassmorphism focus card
+  card.style.position = 'relative';
+
+  // Make the underlying video content blurry
+  const thumbnail = card.querySelector('ytd-thumbnail, .ytd-thumbnail');
+  const details = card.querySelector('#details');
+  if (thumbnail) thumbnail.style.filter = 'blur(10px) grayscale(80%)';
+  if (details) details.style.filter = 'blur(10px) grayscale(80%)';
+
+  // Inject Premium Glassmorphism Focus Card
+  const focusCard = document.createElement('div');
+  focusCard.className = 'fs-focus-card';
+  focusCard.style.cssText = `
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 15, 20, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    padding: 16px;
+    transition: all 0.3s ease;
+    gap: 4px;
+  `;
+
+  const studyGoal = profile?.goal || 'your goals';
+  const reason = result?.reason || 'No interest match found';
+  focusCard.innerHTML = `
+    <div style="font-size: 22px;">🛡️</div>
+    <div style="color: #fff; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;">Distraction Blocked</div>
+    <div style="color: #a78bfa; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500;">Stay focused on ${studyGoal}</div>
+    <div style="color: rgba(255,255,255,0.4); font-family: 'Inter', sans-serif; font-size: 10px; margin-top: 4px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${reason}">💡 ${reason}</div>
+    <button class="fs-show-anyway" style="
+      margin-top: 8px;
+      padding: 4px 14px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.5);
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    ">Show Anyway</button>
+  `;
+
+  card.appendChild(focusCard);
+
+  // "Show Anyway" button handler
+  const showBtn = focusCard.querySelector('.fs-show-anyway');
+  showBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Remove the overlay
+    focusCard.remove();
+    if (thumbnail) thumbnail.style.filter = '';
+    if (details) details.style.filter = '';
+    card.dataset.fsVerdict = 'OVERRIDE';
+    // Log the override for learning
+    logContentDiet(video, { verdict: 'OVERRIDE', reason: 'User overrode block' });
+    // Slightly increase channel trust
+    if (profile && video.channel) {
+      const ct = profile.channelTrust || {};
+      const channelLower = video.channel.toLowerCase();
+      ct[channelLower] = Math.min((ct[channelLower] ?? 50) + 5, 100);
+      profile.channelTrust = ct;
+      try { chrome.storage.local.set({ feedshift_profile: profile }); } catch(err) {}
+    }
+  });
+
+  // Hover effects
+  showBtn.addEventListener('mouseenter', () => {
+    showBtn.style.background = 'rgba(255,255,255,0.15)';
+    showBtn.style.color = 'rgba(255,255,255,0.8)';
+  });
+  showBtn.addEventListener('mouseleave', () => {
+    showBtn.style.background = 'rgba(255,255,255,0.08)';
+    showBtn.style.color = 'rgba(255,255,255,0.5)';
+  });
+
+  card.addEventListener('mouseenter', () => {
+    focusCard.style.background = 'rgba(15, 15, 20, 0.8)';
+  });
+  card.addEventListener('mouseleave', () => {
+    focusCard.style.background = 'rgba(15, 15, 20, 0.6)';
+  });
 }
 
 function clearProcessedFlags() {
