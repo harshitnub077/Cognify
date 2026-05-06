@@ -29,9 +29,9 @@ export function computeFinalVerdict({ semantic, llm, vision, ytCategory, channel
     WEIGHTS.channelTrust * trustScore;
 
   // Dynamic threshold based on user's tolerance setting (0-100)
-  // tolerance=0 → 0.70 (ultra strict), tolerance=50 → 0.55, tolerance=100 → 0.40
+  // tolerance=0 → 0.60 (strict), tolerance=50 → 0.50, tolerance=100 → 0.40
   const tol = typeof tolerance === 'number' ? tolerance : 50;
-  const threshold = 0.40 + (0.30 * (1 - tol / 100));
+  const threshold = 0.40 + (0.20 * (1 - tol / 100));
 
   return {
     verdict: finalScore >= threshold ? 'ALLOW' : 'BLOCK',

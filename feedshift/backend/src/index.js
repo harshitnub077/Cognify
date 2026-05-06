@@ -37,8 +37,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error' });
 });
 
-const server = app.listen(PORT, '127.0.0.1', () => {
-  console.log(`FeedShift backend listening on http://127.0.0.1:${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`FeedShift backend listening on port ${PORT}`);
 });
 
 // Phase 7: Real-Time Streaming Pipeline

@@ -270,9 +270,9 @@ async function processBatch() {
         throw new Error('API Rate Limit or Error');
       }
     } catch(e) {
-      console.warn('[FeedShift] AI Batch failed. Falling back to BLOCK.', e.message);
+      console.warn('[FeedShift] AI Batch failed. Falling back to ALLOW.', e.message);
       for (const { video } of needsAI) {
-        finalResults.set(video.videoId, { verdict: 'BLOCK', reason: 'AI Engine unreachable' });
+        finalResults.set(video.videoId, { verdict: 'ALLOW', reason: 'AI Engine unreachable (Fail Open)' });
       }
     }
   }

@@ -14,7 +14,9 @@
     "notifications"
   ],
   "host_permissions": [
-    "https://www.youtube.com/*"
+    "https://www.youtube.com/*",
+    "http://localhost:3001/*",
+    "http://127.0.0.1:3001/*"
   ],
   "action": {
     "default_popup": "src/popup.html",

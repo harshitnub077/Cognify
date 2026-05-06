@@ -14,7 +14,7 @@ const MODEL_NAME = isGroq ? 'llama-3.1-8b-instant' : 'gpt-4o-mini';
 
 export async function classifyWithAgent(video, userProfile) {
   if (!openai) {
-    return { verdict: 'BLOCK', confidence: 0.5, reason: 'No API key available for Agent' };
+    return { verdict: 'ALLOW', confidence: 1.0, reason: 'No API key available (Fail Open)' };
   }
 
   const systemPrompt = `You are a strict content relevance classifier for a student's YouTube feed.
@@ -73,7 +73,7 @@ async function _callWithRetry(systemPrompt, userMessage, maxTokens, retries = 1)
       if (err.response) {
          console.error('[ClassificationAgent] Response:', err.response.data || err.response);
       }
-      return { verdict: 'BLOCK', confidence: 0.5, reason: `AI Error: ${err.message?.substring(0,20)}`, topicMatch: 'None' };
+      return { verdict: 'ALLOW', confidence: 1.0, reason: `AI Error: ${err.message?.substring(0,20)} (Fail Open)`, topicMatch: 'None' };
     }
   }
 }
@@ -81,7 +81,7 @@ async function _callWithRetry(systemPrompt, userMessage, maxTokens, retries = 1)
 export async function classifyBatchWithAgent(videos, userProfile) {
   if (!openai || !videos || videos.length === 0) {
     const fallback = {};
-    for (const v of videos || []) fallback[v.videoId] = { verdict: 'BLOCK', confidence: 0.5, reason: 'No API Key' };
+    for (const v of videos || []) fallback[v.videoId] = { verdict: 'ALLOW', confidence: 1.0, reason: 'No API Key (Fail Open)' };
     return fallback;
   }
 
@@ -143,7 +143,7 @@ Respond EXACTLY with a JSON object where the keys are the Video IDs, and the val
          console.error('[ClassificationAgent] Response Body:', err.response.data || err.response);
       }
       const fallback = {};
-      for (const v of videos) fallback[v.videoId] = { verdict: 'BLOCK', confidence: 0.5, reason: `AI Error: ${err.message?.substring(0,20)}` };
+      for (const v of videos) fallback[v.videoId] = { verdict: 'ALLOW', confidence: 1.0, reason: `AI Error: ${err.message?.substring(0,20)} (Fail Open)` };
       return fallback;
     }
   }
