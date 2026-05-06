@@ -58,7 +58,6 @@ async function _callWithRetry(systemPrompt, userMessage, maxTokens, retries = 1)
           { role: 'user', content: userMessage }
         ],
         response_format: { type: 'json_object' },
-        max_tokens: maxTokens,
         temperature: 0.1,
       });
       return JSON.parse(response.choices[0].message.content);
@@ -71,7 +70,10 @@ async function _callWithRetry(systemPrompt, userMessage, maxTokens, retries = 1)
         continue;
       }
       console.error('[ClassificationAgent] Error:', err.message || err);
-      return { verdict: 'BLOCK', confidence: 0.5, reason: 'Agent Error' };
+      if (err.response) {
+         console.error('[ClassificationAgent] Response:', err.response.data || err.response);
+      }
+      return { verdict: 'BLOCK', confidence: 0.5, reason: `AI Error: ${err.message?.substring(0,20)}`, topicMatch: 'None' };
     }
   }
 }
@@ -126,7 +128,6 @@ Respond EXACTLY with a JSON object where the keys are the Video IDs, and the val
           { role: 'user', content: userMessage }
         ],
         response_format: { type: 'json_object' },
-        max_tokens: Math.min(150 * videos.length, 4000), // Cap to stay within TPM
         temperature: 0.1,
       });
       return JSON.parse(response.choices[0].message.content);
@@ -138,8 +139,11 @@ Respond EXACTLY with a JSON object where the keys are the Video IDs, and the val
         continue;
       }
       console.error('[ClassificationAgent] Batch Error:', err.message || err);
+      if (err.response) {
+         console.error('[ClassificationAgent] Response Body:', err.response.data || err.response);
+      }
       const fallback = {};
-      for (const v of videos) fallback[v.videoId] = { verdict: 'BLOCK', confidence: 0.5, reason: 'Agent Error' };
+      for (const v of videos) fallback[v.videoId] = { verdict: 'BLOCK', confidence: 0.5, reason: `AI Error: ${err.message?.substring(0,20)}` };
       return fallback;
     }
   }
