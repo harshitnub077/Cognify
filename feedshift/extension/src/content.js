@@ -102,8 +102,10 @@ async function init() {
         if (studyMode) {
           clearProcessedFlags();
           triggerScan(100);
+          injectStatsWidget();
         } else {
           removeShortsOverlay();
+          document.getElementById('fs-stats-widget')?.remove();
           document.querySelectorAll('[data-fs-verdict="BLOCK"]').forEach(el => {
             el.style.cssText = '';
             const focusCard = el.querySelector('.fs-focus-card');
@@ -127,6 +129,7 @@ async function init() {
 
   if (studyMode) {
     triggerScan(1500);
+    injectStatsWidget();
   }
 
   setupObservers();
@@ -287,8 +290,12 @@ async function processBatch() {
     } else {
       applyBlockUI(card, video, result);
     }
+    updateStatsWidget(result.verdict);
     logContentDiet(video, result);
   }
+
+  // Sync logs to backend for dashboard (throttled to once per 30s)
+  syncDietLogToBackend();
 }
 
 // ── Classification: Local Pre-filter ─────────────────────────────────
@@ -539,6 +546,32 @@ async function logContentDiet(video, result) {
   } catch(e) {}
 }
 
+// ── Sync diet log to backend for dashboard ────────────────────────────
+let lastSyncTime = 0;
+async function syncDietLogToBackend() {
+  if (!isContextValid() || !profile?.userId) return;
+  
+  // Only sync once every 30 seconds to avoid spamming
+  const now = Date.now();
+  if (now - lastSyncTime < 30000) return;
+  lastSyncTime = now;
+  
+  try {
+    const { diet_log: logs = [] } = await chrome.storage.local.get('diet_log');
+    // Only sync last 100 entries
+    const recent = logs.slice(-100);
+    
+    await fetch('http://localhost:3001/stats/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: profile.userId, logs: recent }),
+      signal: AbortSignal.timeout(3000)
+    });
+  } catch(e) {
+    // Silent fail — dashboard data is nice-to-have, not critical
+  }
+}
+
 // ── UI Overlays ───────────────────────────────────────────────────────
 function showSetupBanner() {
   if (document.getElementById('fs-setup-banner')) return;
@@ -567,6 +600,107 @@ function showShortsOverlay() {
 
 function removeShortsOverlay() {
   document.getElementById('fs-shorts-overlay')?.remove();
+}
+
+// ── Floating Stats Widget ─────────────────────────────────────────────
+let sessionBlocked = 0;
+let sessionAllowed = 0;
+let sessionOverrides = 0;
+
+function injectStatsWidget() {
+  if (document.getElementById('fs-stats-widget')) return;
+
+  const widget = document.createElement('div');
+  widget.id = 'fs-stats-widget';
+  widget.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99998;
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 12px 16px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #e2e8f0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    cursor: default;
+    user-select: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  `;
+
+  widget.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span style="font-size: 14px;">🛡️</span>
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: #a78bfa;">FEEDSHIFT</span>
+    </div>
+    <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1);"></div>
+    <div id="fs-stat-blocked" style="display: flex; align-items: center; gap: 4px;">
+      <span style="font-size: 11px; color: #f87171; font-weight: 700;">0</span>
+      <span style="font-size: 10px; color: rgba(255,255,255,0.4);">blocked</span>
+    </div>
+    <div id="fs-stat-allowed" style="display: flex; align-items: center; gap: 4px;">
+      <span style="font-size: 11px; color: #4ade80; font-weight: 700;">0</span>
+      <span style="font-size: 10px; color: rgba(255,255,255,0.4);">allowed</span>
+    </div>
+    <div id="fs-stat-time" style="display: flex; align-items: center; gap: 4px;">
+      <span style="font-size: 11px; color: #60a5fa; font-weight: 700;">0m</span>
+      <span style="font-size: 10px; color: rgba(255,255,255,0.4);">saved</span>
+    </div>
+    <button id="fs-widget-minimize" style="
+      background: none; border: none; color: rgba(255,255,255,0.3);
+      cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1;
+    ">×</button>
+  `;
+
+  document.body.appendChild(widget);
+
+  // Minimize toggle
+  let minimized = false;
+  const statsContent = widget.querySelectorAll('#fs-stat-blocked, #fs-stat-allowed, #fs-stat-time');
+  const dividers = widget.querySelectorAll('div[style*="width: 1px"]');
+
+  document.getElementById('fs-widget-minimize').addEventListener('click', () => {
+    minimized = !minimized;
+    statsContent.forEach(el => el.style.display = minimized ? 'none' : 'flex');
+    dividers.forEach(el => el.style.display = minimized ? 'none' : 'block');
+    document.getElementById('fs-widget-minimize').textContent = minimized ? '+' : '×';
+  });
+
+  // Hover glow
+  widget.addEventListener('mouseenter', () => {
+    widget.style.borderColor = 'rgba(167, 139, 250, 0.3)';
+    widget.style.boxShadow = '0 8px 32px rgba(139, 92, 246, 0.15)';
+  });
+  widget.addEventListener('mouseleave', () => {
+    widget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+    widget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.4)';
+  });
+}
+
+function updateStatsWidget(verdict) {
+  if (verdict === 'ALLOW') sessionAllowed++;
+  else if (verdict === 'OVERRIDE') sessionOverrides++;
+  else sessionBlocked++;
+
+  const blockedEl = document.querySelector('#fs-stat-blocked span:first-child');
+  const allowedEl = document.querySelector('#fs-stat-allowed span:first-child');
+  const timeEl = document.querySelector('#fs-stat-time span:first-child');
+
+  if (blockedEl) blockedEl.textContent = sessionBlocked;
+  if (allowedEl) allowedEl.textContent = sessionAllowed;
+  // Estimate: each blocked distraction video saves ~8 minutes on average
+  const minutesSaved = sessionBlocked * 8;
+  if (timeEl) {
+    timeEl.textContent = minutesSaved >= 60
+      ? `${Math.floor(minutesSaved / 60)}h${minutesSaved % 60}m`
+      : `${minutesSaved}m`;
+  }
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────

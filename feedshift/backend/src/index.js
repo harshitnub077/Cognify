@@ -4,6 +4,7 @@ import cors from 'cors';
 import classifyRouter from './routes/classify.js';
 import profileRouter from './routes/profile.js';
 import signalRouter from './routes/signals.js';
+import statsRouter from './routes/stats.js';
 import { setupWebSocketServer } from './ws/classifyStream.js';
 
 
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
 app.use('/classify', classifyRouter);
 app.use('/profile', profileRouter);
 app.use('/signal', signalRouter);
+app.use('/stats', statsRouter);
 
 // Health check
 app.get('/health', (req, res) => {
