@@ -194,3 +194,4 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     }
   }
 });
+
