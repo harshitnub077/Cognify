@@ -247,3 +247,4 @@ async function activateFeedShift() {
     btnActivate.disabled = false;
   }
 }
+
