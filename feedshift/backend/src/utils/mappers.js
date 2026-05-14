@@ -20,3 +20,4 @@ export function mapProfileToClient(dbProfile) {
     interestKeywords: dbProfile.interest_keywords || {}
   };
 }
+
