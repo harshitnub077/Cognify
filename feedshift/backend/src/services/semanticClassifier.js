@@ -1,128 +1,56 @@
 /**
  * semanticClassifier.js
  * 
- * Phase 1 of the FeedShift V2 AI upgrade.
- * Uses cosine similarity on pre-computed interest embeddings to determine
- * if a video is relevant to the user's interests.
- *
- * Falls back gracefully to heuristic scoring if OpenAI is unavailable.
+ * FeedShift V3 — Heuristic + keyword-expansion classifier.
+ * Uses expanded topic keyword maps for fast, accurate local matching.
+ * Falls back to null for the LLM agent to decide ambiguous cases.
  */
-
-import OpenAI from 'openai';
-
-const openai = process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('placeholder')
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
-
-// In-memory cache for interest embeddings (keyed by topic name)
-const embeddingCache = new Map();
-
 /**
- * Compute cosine similarity between two vectors.
- */
-function cosineSimilarity(a, b) {
-  if (!a || !b || a.length !== b.length) return 0;
-  let dot = 0, normA = 0, normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
-/**
- * Embed a text string using OpenAI's text-embedding-3-small model.
- * Extremely cheap: $0.02 per 1M tokens.
- */
-async function embedText(text) {
-  if (!openai) return null;
-  const cacheKey = text.substring(0, 100);
-  if (embeddingCache.has(cacheKey)) return embeddingCache.get(cacheKey);
-
-  try {
-    const response = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: text.substring(0, 512),
-    });
-    const embedding = response.data[0].embedding;
-    embeddingCache.set(cacheKey, embedding);
-    return embedding;
-  } catch (e) {
-    console.error('[SemanticClassifier] Embedding failed:', e.message);
-    return null;
-  }
-}
-
-/**
- * Pre-compute interest embeddings for a user profile.
- * Call this when a user saves their profile to warm the cache.
- */
-export async function preComputeInterestEmbeddings(interests) {
-  if (!openai) return {};
-  
-  const embeddings = {};
-  for (const interest of interests) {
-    const topic = interest.topic || interest;
-    // Enriched query gives much better embeddings than just the topic name
-    const query = `${topic} educational tutorial explanation lecture concept deep dive`;
-    const embedding = await embedText(query);
-    if (embedding) {
-      embeddings[topic] = embedding;
-    }
-  }
-  console.log(`[SemanticClassifier] Pre-computed embeddings for ${Object.keys(embeddings).length} interests`);
-  return embeddings;
-}
-
-/**
- * Classify a video using semantic similarity against user's interest embeddings.
+ * Classify a video using heuristic keyword matching against user interests.
+ * Returns a verdict if confident, or null to defer to the LLM agent.
  * 
  * @param {object} video - { title, channelName, description, tags }
- * @param {object} profileSnapshot - { interests, interestEmbeddings }
- * @returns {{ verdict, confidence, reason, topicMatch }}
+ * @param {object} profileSnapshot - { interests }
+ * @returns {{ verdict, confidence, reason, topicMatch } | null}
  */
 export async function semanticClassify(video, profileSnapshot) {
-  const { interestEmbeddings = {} } = profileSnapshot;
-  
-  if (!openai || Object.keys(interestEmbeddings).length === 0) {
-    // No embeddings available — return null to fall through to other layers
-    return null;
-  }
-
   // Build rich text from all available video metadata
   const videoText = [
     video.title,
     video.channelName,
     video.description?.substring(0, 400) || '',
     (video.tags || []).slice(0, 15).join(' '),
-  ].join(' ').trim();
+  ].join(' ').trim().toLowerCase();
 
-  const videoEmbedding = await embedText(videoText);
-  if (!videoEmbedding) return null;
+  // Distraction Check — expanded for regional + trending patterns
+  const distractions = [
+    'prank', 'vlog', 'funny', 'fail', 'reaction', 'drama', 'gossip',
+    'celebrity', 'tiktok', 'shorts', 'gaming', 'playthrough', 'unboxing',
+    'beef', 'roast video', 'exposed video', 'reply to', 'vs battle',
+    'challenge accepted', 'insane reaction', 'free fire', 'bgmi',
+    'i quit', 'never again', 'not clickbait', '24 hour challenge',
+    'last to leave', 'first to', 'mukbang', 'asmr eating',
+  ];
+  if (distractions.some(d => videoText.includes(d))) {
+    return { verdict: 'BLOCK', confidence: 0.9, reason: 'Matched distraction pattern (Heuristic)', topicMatch: 'None' };
+  }
 
-  let maxSimilarity = 0;
-  let bestTopic = null;
-
-  for (const [topic, interestEmb] of Object.entries(interestEmbeddings)) {
-    const sim = cosineSimilarity(videoEmbedding, interestEmb);
-    if (sim > maxSimilarity) {
-      maxSimilarity = sim;
-      bestTopic = topic;
+  // Match Interests against expanded keyword maps
+  for (const interest of profileSnapshot.interests || []) {
+    const topic = (interest.topic || interest).toLowerCase();
+    const keywords = EXPANDED_TOPIC_KEYWORDS[topic] || [topic];
+    
+    let matchCount = 0;
+    for (const kw of keywords) {
+      if (videoText.includes(kw)) matchCount++;
+    }
+    
+    if (matchCount >= 2 || (matchCount >= 1 && videoText.includes(topic))) {
+      return { verdict: 'ALLOW', confidence: 0.8, reason: `Matched keywords for ${topic} (Heuristic)`, topicMatch: topic };
     }
   }
 
-  console.log(`[SemanticClassifier] "${video.title.substring(0, 40)}" → similarity: ${maxSimilarity.toFixed(3)} (${bestTopic})`);
-
-  // Thresholds tuned for educational content filtering
-  if (maxSimilarity >= 0.72) {
-    return { verdict: 'ALLOW', confidence: maxSimilarity, reason: `High semantic match: ${bestTopic}`, topicMatch: bestTopic };
-  }
-  if (maxSimilarity <= 0.45) {
-    return { verdict: 'BLOCK', confidence: 1 - maxSimilarity, reason: `Low semantic similarity (${maxSimilarity.toFixed(2)})`, topicMatch: 'None' };
-  }
-
-  // Uncertain zone (0.45-0.72) — return null to let LLM decide
+  // Heuristic is unsure — defer to LLM agent
   return null;
 }
 

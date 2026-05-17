@@ -4,6 +4,8 @@ import cors from 'cors';
 import classifyRouter from './routes/classify.js';
 import profileRouter from './routes/profile.js';
 import signalRouter from './routes/signals.js';
+import statsRouter from './routes/stats.js';
+import { setupWebSocketServer } from './ws/classifyStream.js';
 
 
 const app = express();
@@ -22,6 +24,7 @@ app.use((req, res, next) => {
 app.use('/classify', classifyRouter);
 app.use('/profile', profileRouter);
 app.use('/signal', signalRouter);
+app.use('/stats', statsRouter);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -37,6 +40,9 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, () => {
   console.log(`FeedShift backend listening on port ${PORT}`);
 });
+
+// Phase 7: Real-Time Streaming Pipeline
+setupWebSocketServer(server);
 
 // Graceful shutdown
 const shutdown = () => {

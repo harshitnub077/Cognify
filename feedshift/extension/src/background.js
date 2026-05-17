@@ -138,10 +138,41 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     }
   }
   
-  // 5. EXAM MODE SCHEDULER
+  // 5. INTEREST AUTO-DISCOVERY
+  try {
+    const { diet_log = [], feedshift_profile } = await chrome.storage.local.get(['diet_log', 'feedshift_profile']);
+    if (feedshift_profile && diet_log.length > 50) {
+      // Find channels the user frequently watches/allows
+      const channelCounts = {};
+      diet_log.filter(l => l.verdict === 'ALLOW' || l.verdict === 'OVERRIDE').forEach(l => {
+        if (l.channel) {
+          channelCounts[l.channel] = (channelCounts[l.channel] || 0) + 1;
+        }
+      });
+      
+      const suggestedChannels = Object.entries(channelCounts)
+        .filter(([ch, count]) => count >= 5 && !(feedshift_profile.channelTrust && feedshift_profile.channelTrust[ch.toLowerCase()]))
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(([ch]) => ch);
+        
+      if (suggestedChannels.length > 0) {
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'icons/icon128.png',
+          title: 'FeedShift Discovery',
+          message: `You've been watching a lot of ${suggestedChannels.join(' & ')}. Want to add them to your trusted channels?`
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[Background] Auto-discovery error:', err);
+  }
+
+  // 6. EXAM MODE SCHEDULER
   // Evaluates every time the alarm fires
   const data = await chrome.storage.local.get(['userProfile', 'feedshift_study_mode']);
-  const profile = data.userProfile;
+  const profile = data.userProfile || data.feedshift_profile; // Fallback to new key
   const isStudyMode = !!data.feedshift_study_mode;
 
   if (profile && profile.goal && profile.goal.deadline) {
@@ -152,9 +183,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (daysUntilDeadline <= 30 && daysUntilDeadline > 0 && !isStudyMode) {
       chrome.notifications.create({
         type: 'basic',
-        iconUrl: 'icon128.png', // Fallback to assumed icon
+        iconUrl: 'icons/icon128.png', // Fallback to assumed icon
         title: 'FeedShift Exam Mode',
-        message: `Exam mode activating: ${Math.ceil(daysUntilDeadline)} days until ${profile.goal.title || 'your goal'}!`
+        message: `Exam mode activating: ${Math.ceil(daysUntilDeadline)} days until ${profile.goal.title || profile.goal || 'your goal'}!`
       });
       chrome.storage.local.set({ feedshift_study_mode: true });
     } else if (daysUntilDeadline < -2 && isStudyMode) {
