@@ -1,0 +1,158 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid()) // Can map to Supabase auth.users.id
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile       UserProfile?
+  contentLogs   ContentLog[]
+  driftScores   DriftScore[]
+  streaks         Streak[]
+  coachSessions   CoachSession[]
+  bookmarks       Bookmark[]
+  achievements    Achievement[]
+  circleMembers   CircleMember[]
+}
+
+model UserProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  displayName String?
+  avatarUrl   String?
+  onboarded   Boolean  @default(false)
+  focusAreas  String[] // Array of areas they want to focus on (e.g., productivity, learning)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContentLog {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  url         String?
+  title       String?
+  thumbnail   String?
+  contentType String // e.g., 'article', 'video', 'social_media'
+
+  // AI Analysis Results
+  isConscious     Boolean  @default(false)
+  score           Int      @default(0) // e.g., 0-100 score of how aligned it is
+  summary         String?
+  tags            String[]
+  dominantEmotion String?
+  emotions        Json?
+  toxicity        Json?
+
+  timeSpentSecs Int @default(0)
+
+  createdAt DateTime @default(now())
+}
+
+model DriftScore {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  score   Float // Calculated drift score
+  date    DateTime @default(now()) // Can be aggregated daily
+  factors Json? // Why the score is what it is
+  trend   String? // 'improving', 'declining', 'stable'
+}
+
+model Streak {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currentCount Int      @default(0)
+  bestCount    Int      @default(0)
+  lastUpdate   DateTime @default(now())
+}
+
+model CoachSession {
+  id         String         @id @default(uuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  summary    String?
+  keyInsight String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  messages   CoachMessage[]
+}
+
+model CoachMessage {
+  id        String       @id @default(uuid())
+  sessionId String
+  session   CoachSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String // 'user' or 'coach'
+  content   String
+  reaction  String? // 'helpful', 'think'
+  createdAt DateTime     @default(now())
+}
+
+model Bookmark {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  url             String
+  title           String
+  thumbnail       String?
+  platform        String
+  duration        String?
+  viewCount       String?
+  
+  score           Float    @default(0) // Goal alignment score
+  dominantEmotion String?
+  emotions        Json?
+  
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, url])
+}
+
+model Achievement {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String   // e.g., 'streak_7', 'toxic_reducer'
+  unlockedAt DateTime @default(now())
+  metadata   Json?    // Store current progress
+  
+  @@unique([userId, type])
+}
+
+model Circle {
+  id         String         @id @default(uuid())
+  name       String
+  inviteCode String         @unique
+  createdBy  String
+  createdAt  DateTime       @default(now())
+  members    CircleMember[]
+}
+
+model CircleMember {
+  id       String @id @default(uuid())
+  circleId String
+  circle   Circle @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([circleId, userId])
+}
