@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Cognify</div>
+        </header>
+
+        <div id="unauth-view" class="view hidden">
+            <h2>Welcome to Cognify</h2>
+            <p>Your AI-powered conscious content intelligence platform.</p>
+            <button id="login-btn" class="primary-btn">Log in to Cognify</button>
+            <div class="test-auth-box">
+                <small>Dev fallback:</small>
+                <input type="text" id="mock-token-input" placeholder="Paste mock JWT token">
+                <button id="mock-login-btn">Mock Login</button>
+            </div>
+        </div>
+
+        <div id="auth-view" class="view hidden">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-analyzed">0</div>
+                    <div class="stat-label">Videos Analyzed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-alignment">0%</div>
+                    <div class="stat-label">Avg Alignment</div>
+                </div>
+            </div>
+
+            <div class="toggle-container">
+                <span>Extension Active</span>
+                <label class="switch">
+                    <input type="checkbox" id="active-toggle" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <button id="dashboard-btn" class="secondary-btn">Open full dashboard</button>
+            <button id="logout-btn" class="text-btn">Log out</button>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
