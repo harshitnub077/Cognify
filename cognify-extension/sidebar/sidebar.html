@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+    <div class="sidebar-container slide-in">
+        <header>
+            <div class="logo">Cognify</div>
+        </header>
+
+        <div id="loading" class="hidden stagger-1">
+            <div class="spinner"></div>
+            <p>Analyzing content...</p>
+        </div>
+
+        <div id="no-content" class="stagger-1">
+            <p>No content currently selected for analysis.</p>
+        </div>
+
+        <div id="analysis-view" class="hidden">
+            <!-- Video Info -->
+            <div class="card video-info stagger-1">
+                <img id="video-thumbnail" src="" alt="Thumbnail" />
+                <h3 id="video-title">Title</h3>
+                <p id="video-channel">Channel</p>
+            </div>
+
+            <!-- AI Verdict (Chat Bubble) -->
+            <div class="verdict-bubble stagger-2">
+                <div class="avatar">C</div>
+                <div class="bubble">
+                    <p id="verdict-text">Recommendation summary...</p>
+                </div>
+            </div>
+
+            <!-- Rings & Gauges -->
+            <div class="metrics-grid stagger-3">
+                <!-- Goal Alignment Ring -->
+                <div class="card ring-card">
+                    <h4>Goal Match</h4>
+                    <div class="svg-container">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path class="circle alignment-circle" id="alignment-path"
+                              stroke-dasharray="0, 100"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <text x="18" y="20.35" class="percentage" id="alignment-score">0%</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Toxicity Gauge -->
+                <div class="card ring-card">
+                    <h4>Toxicity</h4>
+                    <div class="svg-container">
+                        <!-- pi * r = 3.14 * 15.9 = ~50 circumference for half circle -->
+                        <svg viewBox="0 0 36 24" class="gauge-chart">
+                            <path class="gauge-bg"
+                              d="M 2 20 A 16 16 0 0 1 34 20"
+                            />
+                            <path class="gauge toxicity-gauge" id="toxicity-path"
+                              stroke-dasharray="0, 50.2"
+                              d="M 2 20 A 16 16 0 0 1 34 20"
+                            />
+                            <text x="18" y="18" class="gauge-text" id="toxicity-score">0</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emotion Breakdown -->
+            <div class="card stagger-4">
+                <h4>Emotion Profile</h4>
+                <div id="emotion-bars" class="emotion-container">
+                    <!-- Bars injected by JS -->
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions stagger-5">
+                <button id="find-better-btn" class="primary-btn">
+                    <span id="find-btn-text">Find better content</span>
+                    <div id="find-btn-spinner" class="btn-spinner hidden"></div>
+                </button>
+            </div>
+
+            <!-- Recommendations -->
+            <div id="recommendations" class="hidden">
+                <h4 style="margin: 24px 0 12px 0; font-size: 14px; color: #A7A9BE; text-transform: uppercase;">Recommended for You</h4>
+                <div id="recs-list"></div>
+            </div>
+        </div>
+    </div>
+    <script src="sidebar.js"></script>
+</body>
+</html>
