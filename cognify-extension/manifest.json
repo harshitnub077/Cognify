@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Cognify",
+  "version": "1.0.0",
+  "description": "AI-powered conscious content intelligence platform.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "tabs",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://*.instagram.com/*",
+    "*://*.twitter.com/*",
+    "http://localhost:3001/*",
+    "http://localhost:5173/*",
+    "https://api.cognify.app/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "side_panel": {
+    "default_path": "sidebar/sidebar.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "css": ["content/styles.css"],
+      "js": ["content/youtube.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.instagram.com/*"],
+      "css": ["content/styles.css"],
+      "js": ["content/instagram.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["*://*.twitter.com/*", "*://twitter.com/*", "*://x.com/*"],
+      "css": ["content/styles.css"],
+      "js": ["content/generic.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://localhost:5173/*"],
+      "js": ["content/auth-sync.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
