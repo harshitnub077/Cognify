@@ -1,0 +1,19 @@
+FeedShift Privacy Policy
+
+1. Data Collection
+FeedShift collects limited information required to provide its core service:
+- Your user profile (interests, tolerance levels, study goals).
+- An anonymized log of videos you interact with (video IDs, titles, channels, and whether they were allowed or blocked).
+
+2. Data Storage
+- Local Storage: Your immediate video cache and viewing log are stored locally on your device for performance and privacy.
+- Server Storage: If you create an account to use the FeedShift Dashboard, your profile and viewing analytics are synced securely to our Supabase backend.
+
+3. Third-Party Sharing
+FeedShift does not, and will never, sell your data to third parties. Our AI classification layer uses the OpenAI API, but no personally identifiable information (PII) is included in these classification requests—only video metadata.
+
+4. Data Deletion
+You can delete all your local data simply by uninstalling the extension. If you have an account, you can request full account and data deletion from your FeedShift dashboard.
+
+5. Contact
+If you have any questions about your privacy, please contact support at privacy@feedshift.app.

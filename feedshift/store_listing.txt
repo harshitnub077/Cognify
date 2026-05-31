@@ -1,0 +1,23 @@
+TITLE: FeedShift — Control Your YouTube Algorithm
+SHORT DESCRIPTION: Take control of your YouTube feed. Filter out distractions and customize your algorithm for studying, hobbies, or deep focus.
+
+FULL DESCRIPTION:
+YouTube's recommendation algorithm is designed to keep you watching, often leading to endless scrolling and lost focus. FeedShift is here to change that.
+
+FeedShift is an intelligent, privacy-first extension that automatically filters your YouTube feed based on your personal goals and interests. Whether you want to focus entirely on advanced mathematics, keep your feed clean for your kids, or just reduce distracting entertainment content, FeedShift intercepts the feed in real-time.
+
+Features:
+- Custom Interest Profiles: Define exactly what you want to see (e.g. "Astrophysics at an advanced level") and we will filter out the rest.
+- 5-Layer AI Classification: Our fast, intelligent scanner reads video titles, channels, and descriptions to ensure they match your active goals.
+- Study Mode Toggle: With one click, switch between an open feed and a distraction-free learning environment.
+- Automated Un-Recommendation: FeedShift automatically sends "Not Interested" signals to YouTube for blocked videos, actively retraining your native algorithm over time.
+- Parent & Exam Locks: Optional scheduling features automatically enforce study mode during critical periods.
+
+Privacy Practices:
+FeedShift does not sell your data. We collect your viewing events (titles, channels) strictly to build your personalized feed and show your dashboard analytics. All real-time classification happens seamlessly, and you can delete your profile and history at any time.
+
+Permissions Request Justification:
+- storage: Used to securely store your profile preferences and cached classifications locally.
+- activeTab & tabs: Required to intercept and evaluate the YouTube feed.
+- scripting: Used to dynamically inject the filter logic specifically onto YouTube pages.
+- alarms & notifications: Used for scheduled Exam Mode locks and study session alerts.
