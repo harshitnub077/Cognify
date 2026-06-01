@@ -65,13 +65,13 @@ export default function OnboardingPage() {
 
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: session.user.id,
           role: role,
           interests: formattedInterests,
           tolerance: tolerance,
           study_mode_active: true // Auto-activate
-        })
-        .eq('user_id', session.user.id);
+        }, { onConflict: 'user_id' });
 
       if (error) throw error;
 

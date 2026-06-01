@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background-light text-slate-900 dark:bg-background-dark dark:text-slate-100 font-sans antialiased transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-xl;
+  }
+  
+  .card-premium {
+    @apply bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+  }
+  
+  .btn-primary {
+    @apply px-6 py-2.5 rounded-lg font-medium bg-primary text-white hover:bg-primary/90 active:scale-95 transition-all shadow-md shadow-primary/20 relative overflow-hidden;
+  }
+  
+  .btn-primary::after {
+    content: '';
+    @apply absolute top-0 left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg];
+  }
+  
+  .btn-primary:hover::after {
+    animation: shimmer 1.5s infinite;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-2.5 rounded-lg font-medium bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all relative overflow-hidden;
+  }
+
+  .btn-secondary::after {
+    content: '';
+    @apply absolute top-0 left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-slate-300/30 dark:via-white/10 to-transparent skew-x-[-20deg];
+  }
+
+  .btn-secondary:hover::after {
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    left: 200%;
+  }
+}

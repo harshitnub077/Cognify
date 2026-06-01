@@ -1,166 +1,59 @@
-# Cognify 🎯 
+# Cognify 🧠
 
-> Intercept YouTube's feed. Filter by your interests. Retrain the algorithm.
+Cognify is an AI-powered conscious content intelligence platform designed to cure mindless scrolling. It analyzes your content diet across YouTube, Instagram, and Twitter, scoring it against your personal goals to help you align your digital habits with your ideal self.
 
-Cognify (formerly FeedShift) is a comprehensive suite featuring a Chrome Extension, Node.js backend, and Next.js dashboard. It classifies every YouTube video against your personal interest profile, hides irrelevant videos, and programmatically sends "Not Interested" signals to retrain YouTube's recommendation engine.
+## 🌟 Key Features
+- **Identity Drift Tracking**: Real-time monitoring of how far your content consumption drifts from your life goals.
+- **Socratic AI Coach**: A Claude-powered coach that never gives direct advice—only insightful, psychologically probing questions.
+- **Goal-Aligned Recommendations**: Replaces algorithm slot-machines with curated content perfectly mapped to your "Deep Thinker" or "Mindful Creator" goals.
+- **Annual Mind Report**: A Spotify-Wrapped style retrospective of your digital year with PDF export capabilities.
+- **Accountability Circles**: Private, privacy-first leaderboards to stay aligned with friends without sharing specific viewing history.
+- **Gamification**: Earn XP, unlock trophies, and maintain streaks for conscious consumption.
 
----
+## 🏗 Architecture
+Cognify is a robust microservice architecture:
+1. **Frontend**: React 18, Vite, Tailwind CSS, Zustand, React Query, Recharts.
+2. **Backend**: Node.js, Express, Prisma ORM, PostgreSQL.
+3. **NLP Engine**: Python 3.11, FastAPI, HuggingFace Transformers (Toxicity/Emotion detection).
+4. **Extension**: Chrome Manifest V3 side-panel extension injecting AI analytics directly into social platforms.
 
-## 📁 Repository Structure
-
-```text
-Cognify/
-└── feedshift/
-    ├── extension/          Chrome Extension (Manifest V3, vanilla JS)
-    ├── backend/            Node.js + Express classifier API
-    ├── dashboard/          Next.js 14 App Router dashboard
-    └── shared/             Shared TypeScript types
-```
-
-## 🚀 Getting Started
+## 🚀 Setup Instructions
 
 ### Prerequisites
+- Node.js 20+
+- Python 3.11+
+- PostgreSQL
+- Redis (for BullMQ / NLP caching)
 
-| Tool | Version |
-|------|---------|
-| Node.js | ≥ 20.0.0 |
-| npm | ≥ 10.0.0 |
-| Chrome | Latest stable |
-| Redis | Optional (in-memory fallback used if absent) |
-
----
-
-### 1. Backend (Express API)
-
+### 1. Database & Backend
 ```bash
-cd feedshift/backend
-
-# Install dependencies
+cd backend
 npm install
-
-# Configure environment
-cp .env.example .env
-# Fill in: OPENAI_API_KEY, YOUTUBE_DATA_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-
-# Start dev server (hot-reload via --watch)
+cp ../.env.example .env # Fill in your DB credentials
+npx prisma db push
+npx prisma generate
 npm run dev
-# → http://localhost:3001
 ```
 
-**Available endpoints:**
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/classify` | Classify a single video |
-| `POST` | `/classify/batch` | Classify multiple videos |
-| `GET` | `/profile/:userId` | Get user profile |
-| `POST` | `/profile` | Create / update profile |
-| `POST` | `/signal` | Record learning signal |
-| `POST` | `/signal/batch` | Bulk signal flush |
-| `GET` | `/health` | Server health check |
-
----
-
-### 2. Dashboard (Next.js 14)
-
+### 2. Frontend
 ```bash
-cd feedshift/dashboard
-
-# Install dependencies
+cd frontend
 npm install
-
-# Configure environment
-# Create .env.local:
-cat > .env.local << 'EOF'
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-BACKEND_URL=http://localhost:3001
-RAZORPAY_KEY_ID=rzp_test_...
-RAZORPAY_KEY_SECRET=...
-EOF
-
-# Start dev server
+cp ../.env.example .env # Fill in your Supabase and API URLs
 npm run dev
-# → http://localhost:3000
 ```
 
-**Pages:**
-
-| Route | Description |
-|-------|-------------|
-| `/` | Landing / login |
-| `/dashboard` | Content diet dashboard |
-| `/dashboard/settings` | Profile editor |
-| `/parent` | Parent monitoring view |
-
----
-
-### 3. Chrome Extension
-
-No build step needed — vanilla JS with ES modules.
-
-1. Open Chrome → `chrome://extensions/`
-2. Enable "Developer mode" (top right toggle)
-3. Click "Load unpacked"
-4. Select: `feedshift/extension/`
-5. The icon appears in your toolbar, and the onboarding page opens automatically.
-
-> **Important:** The backend must be running on `http://localhost:3001` for the AI classification (Layer 5) to work. Layers 1–4 work fully offline.
-
----
-
-## 🧠 5-Layer Classification Engine
-
-| Layer | Trigger | Speed |
-|-------|---------|-------|
-| **Cache** | Video seen before | ~0ms |
-| **2 — Blocked Keywords** | Title contains blocked topic | ~1ms |
-| **3 — Confirmed Keywords** | Title contains confirmed topic | ~1ms |
-| **4 — Channel Trust** | Trust score ≥ 80 or ≤ 20 | ~1ms |
-| **5 — AI (Groq / OpenAI)** | All other videos | ~500ms |
-
----
-
-## 🗄️ Database Schema
-
-Run this in your Supabase SQL editor:
-
-```sql
--- Profiles table
-create table profiles (
-  id uuid primary key default gen_random_uuid(),
-  user_id text unique not null,
-  data jsonb not null,
-  updated_at timestamptz default now()
-);
-
--- Signals table
-create table signals (
-  id uuid primary key default gen_random_uuid(),
-  user_id text not null,
-  type text not null,
-  video_id text,
-  video_title text,
-  watch_percent int,
-  created_at timestamptz default now()
-);
-
--- Enable RLS
-alter table profiles enable row level security;
-alter table signals enable row level security;
+### 3. Python NLP Service
+```bash
+cd cognify-nlp
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8001
 ```
 
----
-
-## 🧑‍💻 Contributing
-
-1. Fork the repo
-2. Create a feature branch: `git checkout -b feat/my-feature`
-3. Commit changes: `git commit -m 'feat: add my feature'`
-4. Push and open a Pull Request
-
----
-
-## 📜 License
-
-MIT © Cognify Contributors
+## 🔒 Production Security
+- Configured with `helmet.js` and `express-rate-limit`.
+- Inputs validated via `zod`.
+- Error tracking integrated via `@sentry/node` and `@sentry/react`.
+- Google Analytics 4 tracking.

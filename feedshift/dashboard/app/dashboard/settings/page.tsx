@@ -86,6 +86,19 @@ export default function SettingsPage() {
           };
           setProfile(loaded);
           setOriginalProfile(loaded);
+
+          if (typeof window !== 'undefined') {
+            window.postMessage({
+              type: 'FEEDSHIFT_SYNC_PROFILE',
+              profile: {
+                userId: session.user.id,
+                interests: loaded.interests,
+                tolerance: loaded.tolerance,
+                studyModeActive: loaded.studyModeActive,
+                goal: loaded.goal
+              }
+            }, window.location.origin);
+          }
         }
       } catch {
         // Fallback mock
@@ -101,6 +114,19 @@ export default function SettingsPage() {
         };
         setProfile(mock);
         setOriginalProfile(mock);
+
+        if (typeof window !== 'undefined') {
+          window.postMessage({
+            type: 'FEEDSHIFT_SYNC_PROFILE',
+            profile: {
+              userId: 'anon',
+              interests: mock.interests,
+              tolerance: mock.tolerance,
+              studyModeActive: mock.studyModeActive,
+              goal: mock.goal
+            }
+          }, window.location.origin);
+        }
       } finally {
         setLoading(false);
       }
@@ -164,6 +190,20 @@ export default function SettingsPage() {
       setOriginalProfile(profile);
       setSavedOk(true);
       setTimeout(() => setSavedOk(false), 2500);
+
+      // Sync with Chrome Extension automatically!
+      if (typeof window !== 'undefined') {
+        window.postMessage({
+          type: 'FEEDSHIFT_SYNC_PROFILE',
+          profile: {
+            userId: session.user.id,
+            interests: profile.interests,
+            tolerance: profile.tolerance,
+            studyModeActive: profile.studyModeActive,
+            goal: profile.goal
+          }
+        }, window.location.origin);
+      }
     } catch (err: any) {
       setError(err?.message || 'Save failed. Please try again.');
     } finally {

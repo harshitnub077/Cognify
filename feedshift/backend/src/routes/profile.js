@@ -1,17 +1,11 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { mapProfileToClient } from '../utils/mappers.js';
+import { getProfile, upsertProfile, deleteProfile } from '../services/profileStore.js';
 
 dotenv.config();
 
 const router = express.Router();
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || 'http://localhost:8000',
-  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || 'dummy_supabase_key'
-);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'dummy_key',
@@ -19,28 +13,18 @@ const openai = new OpenAI({
 
 /**
  * GET /profile/:userId
- * Returns profile from Supabase
+ * Returns profile from Supabase or local offline fallback
  */
 router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching profile:', error);
-      return res.status(500).json({ error: 'Failed to fetch profile' });
-    }
+    const profile = await getProfile(userId);
 
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    res.json(mapProfileToClient(profile));
+    res.json(profile);
   } catch (err) {
     console.error('Error in GET /profile/:userId:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -49,7 +33,7 @@ router.get('/:userId', async (req, res) => {
 
 /**
  * POST /profile
- * Creates or updates profile in Supabase
+ * Creates or updates profile in Supabase or local offline fallback
  */
 router.post('/', async (req, res) => {
   try {
@@ -59,22 +43,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Missing userId' });
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert({
-        user_id: userId,
-        ...profileData,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error upserting profile:', error);
-      return res.status(500).json({ error: 'Failed to save profile' });
-    }
-
-    res.json(mapProfileToClient(data));
+    const data = await upsertProfile({ userId, ...profileData });
+    res.json(data);
   } catch (err) {
     console.error('Error in POST /profile:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -83,21 +53,12 @@ router.post('/', async (req, res) => {
 
 /**
  * DELETE /profile/:userId
- * Soft delete by setting deleted_at timestamp
+ * Soft delete or remove from offline fallback
  */
 router.delete('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { error } = await supabase
-      .from('profiles')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('user_id', userId);
-
-    if (error) {
-      console.error('Error deleting profile:', error);
-      return res.status(500).json({ error: 'Failed to delete profile' });
-    }
-
+    await deleteProfile(userId);
     res.json({ success: true });
   } catch (err) {
     console.error('Error in DELETE /profile/:userId:', err);
@@ -113,15 +74,9 @@ router.get('/:userId/keywords', async (req, res) => {
   try {
     const { userId } = req.params;
     
-    // Fetch profile
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('interests, interest_keywords')
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .single();
-
-    if (error || !profile) {
+    // Fetch profile using helper
+    const profile = await getProfile(userId);
+    if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
@@ -130,7 +85,7 @@ router.get('/:userId/keywords', async (req, res) => {
       return res.json({ interest_keywords: {} });
     }
 
-    const interest_keywords = profile.interest_keywords || {};
+    const interest_keywords = profile.interestKeywords || {};
     let updated = false;
 
     // Iterate through all interests and generate keywords for any that are missing
@@ -140,6 +95,13 @@ router.get('/:userId/keywords', async (req, res) => {
 
       if (interest_keywords[topic] && interest_keywords[topic].length > 0) {
         continue; // Already generated
+      }
+
+      // If OpenAI key is missing or dummy, use static keywords to avoid breaking the UI
+      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('dummy_key')) {
+        interest_keywords[topic] = [topic.toLowerCase(), `${topic.toLowerCase()} tutorial`, `learn ${topic.toLowerCase()}`];
+        updated = true;
+        continue;
       }
 
       try {
@@ -160,19 +122,15 @@ router.get('/:userId/keywords', async (req, res) => {
         }
       } catch (aiError) {
         console.error(`Failed to generate keywords for topic ${topic}:`, aiError);
+        interest_keywords[topic] = [topic.toLowerCase(), `${topic.toLowerCase()} tutorial`, `learn ${topic.toLowerCase()}`];
+        updated = true;
       }
     }
 
-    // Save updated keywords back to profile in Supabase
+    // Save updated keywords back to profile using helper
     if (updated) {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ interest_keywords })
-        .eq('user_id', userId);
-
-      if (updateError) {
-        console.error('Failed to save interest keywords:', updateError);
-      }
+      profile.interestKeywords = interest_keywords;
+      await upsertProfile(profile);
     }
 
     res.json({ interest_keywords });
@@ -200,6 +158,11 @@ router.post('/generate-keywords', async (req, res) => {
       const topic = interest.topic;
       const depth = interest.depth || 'intermediate';
 
+      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY.includes('dummy_key')) {
+        interest_keywords[topic] = [topic.toLowerCase(), `${topic.toLowerCase()} tutorial`, `learn ${topic.toLowerCase()}`];
+        continue;
+      }
+
       try {
         const prompt = `The user is interested in '${topic}' at '${depth}' level. Generate exactly 20 YouTube search keywords that someone at this level would search for. Include: specific sub-topics, common terminology, relevant channel types, key concepts. Return ONLY a JSON array of strings under the key "keywords". No explanations.`;
         
@@ -217,19 +180,15 @@ router.post('/generate-keywords', async (req, res) => {
         }
       } catch (aiError) {
         console.error(`Failed to generate keywords for topic ${topic}:`, aiError);
+        interest_keywords[topic] = [topic.toLowerCase(), `${topic.toLowerCase()} tutorial`, `learn ${topic.toLowerCase()}`];
       }
     }
 
-    // Save to Supabase
+    // Save to database using helper
     if (Object.keys(interest_keywords).length > 0) {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ interest_keywords })
-        .eq('user_id', userId);
-
-      if (updateError) {
-        console.error('Failed to save interest keywords:', updateError);
-      }
+      const profile = await getProfile(userId) || { userId };
+      profile.interestKeywords = interest_keywords;
+      await upsertProfile(profile);
     }
 
     res.json({ interest_keywords });

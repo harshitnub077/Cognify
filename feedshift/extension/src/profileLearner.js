@@ -138,7 +138,7 @@ export async function applySignal(signal, profile) {
 
   // Update local chrome storage immediately
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    await chrome.storage.local.set({ userProfile: updatedProfile });
+    await chrome.storage.local.set({ feedshift_profile: updatedProfile });
   }
 
   // Sync with backend (fire and forget)

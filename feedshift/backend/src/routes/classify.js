@@ -84,7 +84,7 @@ router.post('/', async (req, res) => {
       verdict: fusionResult.verdict,
       confidence: fusionResult.confidence,
       reason: `Multi-signal fusion score: ${fusionResult.confidence.toFixed(2)}`,
-      topicMatch: llmResult.topicMatch || 'None',
+      topicMatch: llmResult.topic || llmResult.topicMatch || 'None',
       breakdown: fusionResult.breakdown
     };
 
@@ -197,7 +197,7 @@ router.post('/classify-batch', async (req, res) => {
             verdict: fusionResult.verdict,
             confidence: fusionResult.confidence,
             reason: llmResult.reason || `Multi-signal score: ${fusionResult.confidence.toFixed(2)}`,
-            topicMatch: llmResult.topicMatch || 'None'
+            topicMatch: llmResult.topic || llmResult.topicMatch || 'None'
           };
 
           finalResults[videoId] = finalResult;

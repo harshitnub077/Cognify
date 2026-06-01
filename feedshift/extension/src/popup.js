@@ -48,7 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const active = e.target.checked;
     await chrome.storage.local.set({ feedshift_study_mode: active });
     updateStatus(active);
-    chrome.runtime.sendMessage({ type: 'TOGGLE_STUDY_MODE' });
   });
 
   btnEditProfile.addEventListener('click', () => {

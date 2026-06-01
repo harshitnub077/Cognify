@@ -56,7 +56,7 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     }
   }
 
-  if (namespace === 'local' && changes.userProfile) {
+  if (namespace === 'local' && (changes.userProfile || changes.feedshift_profile)) {
     // Invalidate the in-memory cache of the classify module.
     // In MV3 Service Workers, memory is volatile anyway, but if we stored it in session, clear it:
     if (chrome.storage.session) {
@@ -114,16 +114,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.tabs.create({ url: 'http://localhost:3000/dashboard' });
     sendResponse({ success: true });
     return false;
-  }
-
-  if (message.type === 'TOGGLE_STUDY_MODE') {
-    chrome.storage.local.get(['feedshift_study_mode'], (data) => {
-      const currentState = !!data.feedshift_study_mode;
-      const newState = !currentState;
-      chrome.storage.local.set({ feedshift_study_mode: newState });
-      sendResponse({ state: newState });
-    });
-    return true; // Keep channel open for async response
   }
 });
 
