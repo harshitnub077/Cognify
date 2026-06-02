@@ -37,6 +37,12 @@ class GoalAlignment(BaseModel):
     matched_goals: List[str]
     reason: str
 
+class Insight(BaseModel):
+    verdict: str
+    insight: str
+    identity_impact: str
+    urgency: str
+
 class AnalyzeResponse(BaseModel):
     url: str
     title: str
@@ -48,6 +54,7 @@ class AnalyzeResponse(BaseModel):
     goal_alignment: GoalAlignment
     content_tags: List[str]
     recommendation: str
+    insight: Optional[Insight] = None
     processed_at: str
 
 class DriftResponse(BaseModel):

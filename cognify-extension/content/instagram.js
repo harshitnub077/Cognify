@@ -22,6 +22,7 @@ function analyzeInstagramPost() {
     const title = document.title;
     
     // 2. Request analysis
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
     chrome.runtime.sendMessage({
         type: 'ANALYZE_CONTENT',
         url: window.location.href,

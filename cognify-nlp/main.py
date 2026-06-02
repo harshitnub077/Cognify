@@ -11,9 +11,8 @@ from cache.redis_client import redis_cache
 
 from services.youtube import fetch_youtube_metadata
 from services.scraper import scrape_metadata
-from services.emotion import analyze_emotion
-from services.toxicity import analyze_toxicity
-from services.alignment import calculate_alignment
+from services.free_nlp import analyze_emotion, analyze_toxicity, compute_alignment
+from services.insight import generate_insight
 
 app = FastAPI(title="Cognify NLP API", version="1.0.0")
 
@@ -63,20 +62,46 @@ async def process_url(url: str, user_goals: list[str]) -> dict:
 
     combined_text = f"{metadata['title']} {metadata['description']}".strip()
     
-    # Run analysis concurrently
-    emotion_task = asyncio.to_thread(analyze_emotion, combined_text)
-    toxicity_task = asyncio.to_thread(analyze_toxicity, combined_text)
-    alignment_task = asyncio.to_thread(calculate_alignment, combined_text, user_goals)
+    # Run analysis concurrently using free HuggingFace endpoints
+    emotion_task = asyncio.create_task(analyze_emotion(combined_text))
+    toxicity_task = asyncio.create_task(analyze_toxicity(combined_text))
+    alignment_task = asyncio.create_task(compute_alignment(combined_text, user_goals))
     
-    emotions, toxicity, goal_alignment = await asyncio.gather(emotion_task, toxicity_task, alignment_task)
+    emotion_result, toxicity_result, alignment_tuple = await asyncio.gather(emotion_task, toxicity_task, alignment_task)
     
-    # Determine dominant emotion
-    dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0] if emotions else "neutral"
+    emotions = emotion_result.get("scores", {})
+    dominant_emotion = emotion_result.get("dominant", "neutral")
+    
+    toxicity = {
+        "overall": toxicity_result.get("overall", 0.0), 
+        "categories": {toxicity_result.get("label", "safe"): toxicity_result.get("overall", 0.0)}
+    }
+    
+    goal_alignment = {
+        "score": alignment_tuple[0], 
+        "reason": alignment_tuple[1],
+        "matched_goals": [user_goals[0]] if user_goals else []
+    }
     
     # Simple recommendation heuristic
     recommendation = "consume"
     if toxicity["overall"] > 0.5 or (goal_alignment["score"] < 0.2 and dominant_emotion in ["anger", "fear", "disgust"]):
         recommendation = "skip"
+
+    # Generate advanced insight via Gemini
+    content_data_for_insight = {
+        "title": metadata["title"],
+        "platform": metadata["platform"],
+        "dominant_emotion": dominant_emotion,
+        "emotion_score": emotions.get(dominant_emotion, 0.0) if emotions else 0.0,
+        "toxicity_score": toxicity["overall"],
+        "alignment_score": goal_alignment["score"]
+    }
+    user_data_for_insight = {
+        "goals": user_goals,
+        "drift_score": 0.0 # Default drift score
+    }
+    insight = await generate_insight(content_data_for_insight, user_data_for_insight)
 
     result = {
         "url": url,
@@ -89,6 +114,7 @@ async def process_url(url: str, user_goals: list[str]) -> dict:
         "goal_alignment": goal_alignment,
         "content_tags": metadata["tags"],
         "recommendation": recommendation,
+        "insight": insight,
         "processed_at": datetime.utcnow().isoformat() + "Z"
     }
     

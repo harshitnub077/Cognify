@@ -37,6 +37,7 @@ function injectFAB() {
     fab.appendChild(text);
     
     fab.addEventListener('click', () => {
+        if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
         chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
     });
     
@@ -54,6 +55,11 @@ async function analyzeCurrentVideo() {
     if (existingBadge) existingBadge.remove();
 
     // 2. Request analysis
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) {
+        console.debug('Cognify: Extension context invalidated. Please refresh the page.');
+        return;
+    }
+    
     chrome.runtime.sendMessage({
         type: 'ANALYZE_CONTENT',
         url: window.location.href,
@@ -105,6 +111,7 @@ function injectBadge(data) {
     `;
 
     badge.addEventListener('click', () => {
+        if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
         chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
     });
 
