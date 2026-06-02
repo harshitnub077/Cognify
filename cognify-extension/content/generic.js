@@ -1,5 +1,6 @@
 // Generic analyzer for other websites (e.g. Twitter)
 setTimeout(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
     chrome.runtime.sendMessage({
         type: 'ANALYZE_CONTENT',
         url: window.location.href,
