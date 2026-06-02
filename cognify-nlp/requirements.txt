@@ -9,3 +9,11 @@ pydantic==2.6.1
 sentence-transformers==2.5.1
 beautifulsoup4==4.12.3
 lxml==5.1.0
+
+langchain
+langchain-community
+langchain-anthropic
+langchain-qdrant
+qdrant-client
+
+langchain-huggingface
