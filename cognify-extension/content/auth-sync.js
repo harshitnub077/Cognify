@@ -21,16 +21,16 @@ function syncToken() {
                         chrome.runtime.sendMessage({ 
                             type: 'SYNC_TOKEN', 
                             token: session.access_token 
-                        }).then(response => {
-                            if (response && response.success) {
+                        }, (response) => {
+                            if (chrome.runtime.lastError) {
+                                console.debug('Cognify: Background script asleep or unavailable.', chrome.runtime.lastError.message);
+                            } else if (response && response.success) {
                                 console.log('Cognify: Successfully synced token to extension ✅');
                             }
-                        }).catch(e => {
-                            console.debug('Cognify: Background script asleep or unavailable.', e.message);
                         });
                         return true;
                     } else {
-                        console.error('Cognify: chrome.runtime is missing. Please refresh the page!');
+                        console.error('Cognify: chrome.runtime is missing. Please refresh the page to reconnect to the extension!');
                     }
                 } catch (err) {
                     console.error('Cognify: Extension context invalidated. YOU MUST REFRESH THIS TAB!', err);
@@ -56,4 +56,10 @@ window.addEventListener('storage', (e) => {
 });
 
 // Since single page app might update localStorage without triggering 'storage' event in same window:
-setInterval(syncToken, 2000);
+const syncInterval = setInterval(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) {
+        clearInterval(syncInterval);
+        return;
+    }
+    syncToken();
+}, 2000);
