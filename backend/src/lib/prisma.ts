@@ -7,13 +7,17 @@ const rawUrl = process.env.DATABASE_URL || '';
 
 let prisma: PrismaClient;
 
-if (rawUrl.startsWith('postgres://') || rawUrl.startsWith('postgresql://')) {
-  const pool = new Pool({ connectionString: rawUrl });
-  const adapter = new PrismaPg(pool);
-  prisma = new PrismaClient({ adapter } as any);
-} else {
-  console.warn('DATABASE_URL is not a valid postgres URL. Database queries will fail.');
-  prisma = new PrismaClient();
+if (!global.__prisma) {
+  if (rawUrl.startsWith('postgres://') || rawUrl.startsWith('postgresql://')) {
+    const pool = new Pool({ connectionString: rawUrl, max: 1 });
+    const adapter = new PrismaPg(pool);
+    global.__prisma = new PrismaClient({ adapter } as any);
+  } else {
+    console.warn('DATABASE_URL is not a valid postgres URL. Database queries will fail.');
+    global.__prisma = new PrismaClient();
+  }
 }
+
+prisma = global.__prisma;
 
 export default prisma;
