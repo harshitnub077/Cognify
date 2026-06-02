@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAchievements } from '../../hooks/useDashboardData';
 import { IconTrophy, IconLock, IconCheck, IconUser } from '@tabler/icons-react';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -19,6 +19,14 @@ const Settings = () => {
   const { data: achievementData } = useAchievements();
   
   const unlockedIds = achievementData?.data?.map((a: any) => a.type) || [];
+
+  const [fakeProgress] = React.useState(() => {
+    const progress: Record<string, number> = {};
+    ACHIEVEMENTS_LIST.forEach(ach => {
+      progress[ach.id] = Math.random() * 60;
+    });
+    return progress;
+  });
 
   const handleTestConfetti = () => {
     confetti({
@@ -97,7 +105,7 @@ const Settings = () => {
                 {/* Fake progress bar if locked */}
                 {!isUnlocked && (
                   <div className="mt-3 w-full h-1 bg-slate-200 dark:bg-[#222] rounded-full overflow-hidden">
-                    <div className="h-full bg-slate-400 rounded-full" style={{ width: `${Math.random() * 60}%` }} />
+                    <div className="h-full bg-slate-400 rounded-full" style={{ width: `${fakeProgress[ach.id]}%` }} />
                   </div>
                 )}
               </div>

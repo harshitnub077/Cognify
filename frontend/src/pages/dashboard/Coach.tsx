@@ -60,7 +60,7 @@ const Coach = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       
-      let coachMsgId = (Date.now() + 1).toString();
+      const coachMsgId = (Date.now() + 1).toString();
       setMessages(prev => [...prev, { id: coachMsgId, role: 'coach', content: '' }]);
 
       while (true) {
@@ -80,7 +80,9 @@ const Coach = () => {
                 setMessages(prev => prev.map(m => m.id === coachMsgId ? { ...m, content: m.content + data.text } : m));
               }
               if (data.done) break;
-            } catch(e) {}
+            } catch (e) {
+              // Ignore parse error
+            }
           }
         }
       }

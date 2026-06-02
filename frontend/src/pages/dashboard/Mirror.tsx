@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { useDriftScore, useEmotionTimeline } from '../../hooks/useDashboardData';
 import { cn } from '../../lib/utils';
@@ -7,6 +7,22 @@ import { format, subDays } from 'date-fns';
 const Mirror = () => {
   const { data: driftData, isLoading: driftLoading } = useDriftScore();
   const { data: timelineData } = useEmotionTimeline();
+
+  const [heatmapData] = React.useState(() => {
+    return Array.from({ length: 365 }).map((_, i) => {
+      const d = subDays(new Date(), 364 - i);
+      const hasData = Math.random() > 0.3;
+      return {
+        date: d,
+        score: hasData ? Math.floor(Math.random() * 100) : null,
+        count: hasData ? Math.floor(Math.random() * 5) + 1 : 0
+      };
+    });
+  });
+
+  const [barHeights] = React.useState(() => {
+    return [...Array(12)].map(() => 20 + Math.random() * 80);
+  });
 
   if (driftLoading) {
     return <div className="flex h-[60vh] items-center justify-center text-slate-500">Gazing into the mirror...</div>;
@@ -21,17 +37,7 @@ const Mirror = () => {
     { subject: 'Logic', A: 75, B: 65, fullMark: 100 },
   ];
 
-  // Mock Heatmap Data (last 365 days)
-  const heatmapData = Array.from({ length: 365 }).map((_, i) => {
-    const d = subDays(new Date(), 364 - i);
-    // Random score for visual, or try to map from timelineData if available
-    const hasData = Math.random() > 0.3;
-    return {
-      date: d,
-      score: hasData ? Math.floor(Math.random() * 100) : null,
-      count: hasData ? Math.floor(Math.random() * 5) + 1 : 0
-    };
-  });
+
 
   const getHeatmapColor = (score: number | null) => {
     if (score === null) return 'bg-slate-100 dark:bg-[#1A1A1A]';
@@ -77,14 +83,11 @@ const Mirror = () => {
             <div className="mt-6">
               <h4 className="text-xs uppercase font-bold text-slate-500 mb-2">Monthly Averages</h4>
               <div className="flex items-end gap-2 h-20">
-                {[...Array(12)].map((_, i) => {
-                  const h = 20 + Math.random() * 80;
-                  return (
-                    <div key={i} className="flex-1 bg-slate-100 dark:bg-[#1A1A1A] rounded-t-sm relative group">
-                      <div className="absolute bottom-0 w-full bg-[#6C4FF6]/50 rounded-t-sm transition-all group-hover:bg-[#6C4FF6]" style={{ height: `${h}%` }} />
-                    </div>
-                  );
-                })}
+                {barHeights.map((h, i) => (
+                  <div key={i} className="flex-1 bg-slate-100 dark:bg-[#1A1A1A] rounded-t-sm relative group">
+                    <div className="absolute bottom-0 w-full bg-[#6C4FF6]/50 rounded-t-sm transition-all group-hover:bg-[#6C4FF6]" style={{ height: `${h}%` }} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
