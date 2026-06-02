@@ -29,7 +29,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     (async () => {
       // Must use the windowId of the sender
       if (sender.tab && sender.tab.windowId) {
-        await chrome.sidePanel.open({ windowId: sender.tab.windowId });
+        try {
+            await chrome.sidePanel.open({ windowId: sender.tab.windowId });
+        } catch (err) {
+            console.error('Failed to open side panel:', err);
+        }
       }
       sendResponse({ success: true });
     })();
