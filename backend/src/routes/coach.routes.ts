@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import prisma from '../lib/prisma';
 
 const router = Router();
 
 // Only initialize if API key is present
-const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
 // Mock streaming for local testing without API credits
 const streamMockResponse = (res: any) => {
@@ -58,7 +58,7 @@ router.post('/message', requireAuth, async (req: any, res: any) => {
       }
     });
 
-    if (!anthropic) {
+    if (!genAI) {
       // Mock flow
       await prisma.coachMessage.create({
         data: {
@@ -85,11 +85,17 @@ User context:
 Conversation style: warm, curious, direct but never preachy. Like a wise mentor, not a therapist or a chatbot.
 Max response length: 3 sentences + 1 question.`;
 
-    const messages = conversation_history.map((msg: any) => ({
-      role: msg.role === 'coach' ? 'assistant' : 'user',
-      content: msg.content
-    }));
-    messages.push({ role: 'user', content: message });
+    const model = genAI.getGenerativeModel({ 
+        model: 'gemini-2.5-flash',
+        systemInstruction: systemPrompt 
+    });
+
+    const chat = model.startChat({
+        history: conversation_history.map((msg: any) => ({
+            role: msg.role === 'coach' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }))
+    });
 
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -97,22 +103,14 @@ Max response length: 3 sentences + 1 question.`;
       'Connection': 'keep-alive',
     });
 
-    const stream = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20240620',
-      max_tokens: 250,
-      system: systemPrompt,
-      messages: messages,
-      stream: true,
-    });
+    const streamResult = await chat.sendMessageStream(message);
 
     let fullContent = "";
 
-    for await (const chunk of stream) {
-      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-        const text = chunk.delta.text;
-        fullContent += text;
-        res.write(`data: ${JSON.stringify({ text })}\n\n`);
-      }
+    for await (const chunk of streamResult.stream) {
+      const text = chunk.text();
+      fullContent += text;
+      res.write(`data: ${JSON.stringify({ text })}\n\n`);
     }
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
