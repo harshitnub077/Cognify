@@ -8,19 +8,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#6C4FF6',
-        accent: '#00C9A7',
+        primary: '#7C3AED', // Deeper vivid purple
+        accent: '#38BDF8',  // Neon blue
         background: {
           light: '#f8fafc',
-          dark: '#0f172a'
+          dark: '#0f0f13' // Deeper dark mode
         },
         surface: {
           light: '#ffffff',
-          dark: '#1e293b'
+          dark: '#1a1a24' // Tinted dark surface
         }
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        display: ['Outfit', 'sans-serif'],
       },
       borderRadius: {
         'xl': '12px',
