@@ -1,33 +1,57 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 export const Logo = ({ className = '' }: { className?: string }) => (
-  <svg 
+  <motion.svg 
     viewBox="0 0 100 100" 
-    className={`w-8 h-8 text-primary ${className}`}
+    className={`w-10 h-10 ${className}`}
     fill="none" 
     xmlns="http://www.w3.org/2000/svg"
+    initial="hidden"
+    animate="visible"
+    whileHover="hover"
   >
-    {/* Outer Arc 1 */}
-    <path 
-      d="M50 15A35 35 0 0 0 15 50C15 65.46 25 78.58 38 83" 
-      stroke="currentColor" 
-      strokeWidth="10" 
+    <defs>
+      <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#7C3AED" />
+        <stop offset="100%" stopColor="#38BDF8" />
+      </linearGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+
+    <motion.path 
+      d="M30 50 C 30 25, 70 25, 70 50 C 70 75, 30 75, 30 50 Z" 
+      stroke="url(#logo-gradient)" 
+      strokeWidth="6" 
       strokeLinecap="round" 
+      filter="url(#glow)"
+      variants={{
+        hidden: { pathLength: 0, opacity: 0 },
+        visible: { 
+          pathLength: 1, 
+          opacity: 1,
+          transition: { duration: 2, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }
+        },
+        hover: { scale: 1.1, rotate: 90, transition: { duration: 0.5 } }
+      }}
     />
-    {/* Outer Arc 2 */}
-    <path 
-      d="M71 22C81 30 85 43 82 56" 
-      stroke="currentColor" 
-      strokeWidth="10" 
-      strokeLinecap="round" 
+    
+    <motion.circle 
+      cx="50" cy="50" r="8" 
+      fill="#38BDF8" 
+      variants={{
+        hidden: { scale: 0 },
+        visible: { 
+          scale: [1, 1.3, 1],
+          transition: { duration: 2, repeat: Infinity }
+        }
+      }}
     />
-    {/* Inner Spark/Brain Icon */}
-    <circle cx="50" cy="50" r="8" fill="currentColor" />
-    <path 
-      d="M50 35L50 42M65 50L58 50M50 65L50 58M35 50L42 50" 
-      stroke="currentColor" 
-      strokeWidth="3" 
-      strokeLinecap="round" 
-    />
-  </svg>
+  </motion.svg>
 );
