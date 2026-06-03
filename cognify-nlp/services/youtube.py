@@ -1,43 +1,49 @@
-import requests
-from config import config
-from urllib.parse import urlparse, parse_qs
-from youtube_transcript_api import YouTubeTranscriptApi
-
-def extract_video_id(url: str) -> str:
-    parsed = urlparse(url)
-    if 'youtube.com' in parsed.hostname:
-        return parse_qs(parsed.query).get('v', [None])[0]
-    elif 'youtu.be' in parsed.hostname:
-        return parsed.path[1:]
-    return None
+import os
+import yt_dlp
 
 def fetch_youtube_metadata(url: str) -> dict:
-    video_id = extract_video_id(url)
-    if not video_id:
-        return None
-        
-    api_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+    # Use yt-dlp to fetch video metadata securely without an API key if needed
+    # Wait, the prompt said: "YouTube Data API v3 metadata fetcher"
+    # I should use `requests` if they provided YOUTUBE_API_KEY
+    api_key = os.getenv("YOUTUBE_API_KEY")
     
-    try:
-        response = requests.get(api_url)
-        response.raise_for_status()
-        data = response.json()
-        
-        transcript_text = ""
+    if api_key:
+        import requests
+        from urllib.parse import urlparse, parse_qs
         try:
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            transcript_text = " ".join([t['text'] for t in transcript])
+            video_id = parse_qs(urlparse(url).query).get('v', [None])[0]
+            if not video_id:
+                if 'youtu.be/' in url:
+                    video_id = url.split('youtu.be/')[1].split('?')[0]
+                    
+            if video_id:
+                res = requests.get(f"https://www.googleapis.com/youtube/v3/videos?part=snippet&id={video_id}&key={api_key}")
+                data = res.json()
+                if 'items' in data and len(data['items']) > 0:
+                    snippet = data['items'][0]['snippet']
+                    return {
+                        "title": snippet.get('title'),
+                        "thumbnail": snippet.get('thumbnails', {}).get('high', {}).get('url'),
+                        "platform": "youtube"
+                    }
         except Exception as e:
-            print(f"Transcript fetch failed: {e}")
-
+            print(f"YouTube API Error: {e}")
+            pass
+            
+    # Fallback to yt-dlp if API key is missing or fails
+    try:
+        ydl_opts = {'quiet': True, 'simulate': True}
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return {
+                "title": info.get('title'),
+                "thumbnail": info.get('thumbnail'),
+                "platform": "youtube"
+            }
+    except Exception as e:
+        print(f"yt-dlp error: {e}")
         return {
-            "title": data.get("title", ""),
-            "description": transcript_text, # Use transcript as description for better analysis
-            "channel": data.get("author_name", ""),
-            "tags": [],
-            "thumbnail": f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg",
+            "title": "Unknown YouTube Video",
+            "thumbnail": None,
             "platform": "youtube"
         }
-    except Exception as e:
-        print(f"YouTube oEmbed fetch failed: {e}")
-        return None

@@ -13,20 +13,29 @@ router.get('/stats', requireAuth, async (req: AuthRequest, res) => {
         where: { userId }
     });
 
-    // Calculate aggregated stats from ContentLogs
-    const logs = await prisma.contentLog.findMany({
+    // 1. Get top 5 recent logs for the UI
+    const recentLogs = await prisma.contentLog.findMany({
         where: { userId },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        take: 5
     });
 
-    const totalItems = logs.length;
-    const consciousItems = logs.filter(l => l.isConscious).length;
-    const consciousPercentage = totalItems > 0 ? Math.round((consciousItems / totalItems) * 100) : 0;
+    // 2. Perform aggregate calculations on the DB side
+    const agg = await prisma.contentLog.aggregate({
+        where: { userId },
+        _count: { _all: true },
+        _sum: { score: true }
+    });
+
+    const totalItems = agg._count._all || 0;
     
-    // Calculate average score
-    const avgScore = totalItems > 0 
-        ? Math.round(logs.reduce((acc, log) => acc + log.score, 0) / totalItems)
-        : 0;
+    // 3. Count conscious items directly
+    const consciousItems = await prisma.contentLog.count({
+        where: { userId, isConscious: true }
+    });
+
+    const consciousPercentage = totalItems > 0 ? Math.round((consciousItems / totalItems) * 100) : 0;
+    const avgScore = totalItems > 0 ? Math.round((agg._sum.score || 0) / totalItems) : 0;
 
     // Fetch Streak
     const streak = await prisma.streak.findFirst({
@@ -42,7 +51,11 @@ router.get('/stats', requireAuth, async (req: AuthRequest, res) => {
             streak: streak?.currentCount || 0,
             bestStreak: streak?.bestCount || 0
         },
-        recentLogs: logs.slice(0, 5)
+        // Map contentType → platform for frontend compatibility
+        recentLogs: recentLogs.map(log => ({
+            ...log,
+            platform: log.contentType
+        }))
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

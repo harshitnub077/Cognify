@@ -64,7 +64,7 @@ async function updateStreak(userId: string) {
 
 router.post('/analyze', requireAuth, analyzeRateLimiter, async (req: AuthRequest, res) => {
   try {
-    const { url } = req.body;
+    const { url, title } = req.body;
     const userId = req.user.id;
 
     if (!url || !isValidUrl(url)) {
@@ -85,43 +85,62 @@ router.post('/analyze', requireAuth, analyzeRateLimiter, async (req: AuthRequest
         return res.json({ success: true, data: existingLog });
     }
 
-    // Fetch user focus areas
+    // Fetch user goals — schema uses identities[] (Phase 1 update)
     const profile = await prisma.userProfile.findUnique({ where: { userId } });
-    const userGoals = profile?.focusAreas || [];
+    const userGoals = (profile as any)?.focusAreas?.length > 0
+        ? (profile as any).focusAreas
+        : ['Focused Developer'];
 
     // Call NLP Microservice
-    let nlpResponse;
+    let nlpResponse: any;
     try {
         const response = await axios.post('http://localhost:8001/analyze', {
             url,
+            title,
+            transcript: req.body.transcript,
             user_goals: userGoals
-        });
+        }, { timeout: 15000 }); // 15s timeout to prevent hanging
         nlpResponse = response.data;
     } catch (nlpError: any) {
         console.error('NLP Service Error:', nlpError.message);
         return res.status(502).json({ success: false, error: 'Failed to communicate with AI analysis service' });
     }
 
-    // Save to Database
+    // Map verdict → isConscious: "watch" = conscious, "caution"/"skip" = not
+    const verdict = nlpResponse.insight?.verdict || 'caution';
+    const isConscious = verdict === 'watch';
+
+    // Tags: use dominant emotion + platform as meaningful tags
+    const tags = [
+        nlpResponse.dominant_emotion,
+        nlpResponse.platform,
+    ].filter(Boolean);
+
+    let thumbnail = nlpResponse.thumbnail || null;
+    if (!thumbnail && url.includes('youtube.com/watch')) {
+        try {
+            const v = new URL(url).searchParams.get('v');
+            if (v) thumbnail = `https://img.youtube.com/vi/${v}/maxresdefault.jpg`;
+        } catch (e) {}
+    }
+
+    // Save to Database — use platform from NLP (not contentType mismatch)
     const contentLog = await prisma.contentLog.create({
       data: {
         userId,
         url,
-        title: nlpResponse.title,
-        thumbnail: nlpResponse.thumbnail || null,
-        contentType: nlpResponse.platform,
-        isConscious: nlpResponse.recommendation === 'consume',
-        score: Math.round(nlpResponse.goal_alignment.score * 100),
-        summary: nlpResponse.goal_alignment.reason,
-        tags: nlpResponse.content_tags,
-        dominantEmotion: nlpResponse.dominant_emotion,
-        emotions: nlpResponse.emotions,
-        toxicity: nlpResponse.toxicity
+        title: nlpResponse.title || 'Untitled',
+        thumbnail: thumbnail,
+        contentType: nlpResponse.platform || 'web',
+        isConscious,
+        score: Math.round(nlpResponse.goal_alignment?.score ?? 0),
+        summary: nlpResponse.insight?.text || nlpResponse.goal_alignment?.reason || '',
+        tags,
+        dominantEmotion: nlpResponse.dominant_emotion || 'neutral',
+        emotions: nlpResponse.emotions || {},
+        toxicity: nlpResponse.toxicity || {}
       }
     });
-
-    // Update Streak
-    await updateStreak(userId);
 
     res.json({ success: true, data: contentLog });
   } catch (error: any) {
@@ -133,14 +152,38 @@ router.post('/analyze', requireAuth, analyzeRateLimiter, async (req: AuthRequest
 router.get('/history', requireAuth, async (req: AuthRequest, res) => {
     try {
         const userId = req.user.id;
-        const logs = await prisma.contentLog.findMany({
-            where: { userId },
-            orderBy: { createdAt: 'desc' },
-            take: 20
-        });
-        res.json({ success: true, data: logs });
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const skip = (page - 1) * limit;
+
+        const [logs, total] = await Promise.all([
+            prisma.contentLog.findMany({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip
+            }),
+            prisma.contentLog.count({ where: { userId } })
+        ]);
+
+        // Map contentType → platform for frontend compatibility
+        const data = logs.map(log => ({ ...log, platform: log.contentType }));
+
+        res.json({ success: true, data, total, page, limit });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Failed to fetch history' });
+    }
+});
+
+// DELETE a single content log
+router.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user.id;
+        const id = String(req.params.id);
+        await prisma.contentLog.deleteMany({ where: { id, userId } });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to delete entry' });
     }
 });
 

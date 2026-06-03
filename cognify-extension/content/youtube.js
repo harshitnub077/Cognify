@@ -1,119 +1,213 @@
-let currentUrl = '';
+// youtube.js — Cognify Content Script for YouTube
+// Detects video navigation (SPA) and injects analysis badge
 
-// Monitor SPA navigation
-const observer = new MutationObserver(() => {
-    if (location.href !== currentUrl) {
-        currentUrl = location.href;
-        if (currentUrl.includes('youtube.com/watch')) {
-            setTimeout(analyzeCurrentVideo, 2000); // Give DOM time to load
-        }
+const BADGE_ID = 'cognify-analysis-badge';
+let lastUrl = '';
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
+function removeBadge() {
+  const existing = document.getElementById(BADGE_ID);
+  if (existing) existing.remove();
+}
+
+function injectLoadingBadge() {
+  removeBadge();
+  const badge = document.createElement('div');
+  badge.id = BADGE_ID;
+  badge.className = 'cognify-badge cognify-badge--loading';
+  badge.textContent = '⚙️ Cognify analyzing...';
+  insertBadge(badge);
+}
+
+function injectResultBadge(data) {
+  removeBadge();
+
+  const dominant = data.dominantEmotion || 'neutral';
+  const score = Math.round(data.score || 0);
+  const isConscious = data.isConscious || false;
+
+  const emojiMap = {
+    joy: '😄', anger: '😠', fear: '😨',
+    sadness: '😢', surprise: '😮', disgust: '🤢', neutral: '😐'
+  };
+  const emoji = emojiMap[dominant] || '😐';
+
+  // Color based on goal alignment
+  let color = '#F59E0B'; // amber default
+  let verdictText = 'CAUTION';
+  if (score > 60) {
+    color = '#10B981'; // green
+    verdictText = 'WATCH';
+  } else if (score < 30) {
+    color = '#EF4444'; // red
+    verdictText = 'SKIP';
+  }
+
+  if (isConscious) {
+    verdictText = 'WATCH';
+  }
+
+  const badge = document.createElement('div');
+  badge.id = BADGE_ID;
+  badge.className = 'cognify-badge';
+  badge.style.borderLeftColor = color;
+  badge.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="cognify-verdict" style="color:${color}">${verdictText}</span>
+      <span class="cognify-sep">·</span>
+      <span>${emoji} ${dominant}</span>
+      <span class="cognify-sep">·</span>
+      <span>${score}% Goal Match</span>
+    </div>
+    <div style="font-size: 11px; margin-top: 4px; color: var(--yt-spec-text-secondary); line-height: 1.3;">
+      ${data.summary || 'Content aligns with your current focus.'}
+    </div>
+  `;
+
+  insertBadge(badge);
+}
+
+function injectErrorBadge(msg) {
+  removeBadge();
+  const badge = document.createElement('div');
+  badge.id = BADGE_ID;
+  badge.className = 'cognify-badge cognify-badge--error';
+  badge.textContent = `⚠️ ${msg}`;
+  insertBadge(badge);
+}
+
+let insertInterval = null;
+
+function insertBadge(badgeEl) {
+  if (insertInterval) {
+    clearInterval(insertInterval);
+    insertInterval = null;
+  }
+
+  // Try to insert below video title
+  const tryInsert = () => {
+    const title = document.querySelector('#title h1') ||
+                  document.querySelector('h1.ytd-video-primary-info-renderer') ||
+                  document.querySelector('#above-the-fold #title') ||
+                  document.querySelector('ytd-reel-player-header-renderer h2');
+    
+    // Find the currently active/visible title by checking offsetParent
+    if (title && title.offsetParent !== null && title.parentNode) {
+      // If a badge already exists, remove it first to avoid duplicates
+      const existing = document.getElementById(BADGE_ID);
+      if (existing) existing.remove();
+      
+      title.parentNode.insertBefore(badgeEl, title.nextSibling);
+      return true;
     }
-});
+    return false;
+  };
 
-observer.observe(document, { subtree: true, childList: true });
-
-// Initial load check
-if (location.href.includes('youtube.com/watch')) {
-    currentUrl = location.href;
-    setTimeout(analyzeCurrentVideo, 2000);
+  if (!tryInsert()) {
+    // Retry after YouTube finishes lazy-loading
+    let tries = 0;
+    insertInterval = setInterval(() => {
+      tries++;
+      if (tryInsert() || tries > 10) {
+        clearInterval(insertInterval);
+        insertInterval = null;
+      }
+    }, 500);
+  }
 }
 
-// Inject Floating Action Button
-function injectFAB() {
-    if (document.querySelector('.cognify-fab')) return;
-    
-    const fab = document.createElement('div');
-    fab.className = 'cognify-fab';
-    
-    const icon = document.createElement('div');
-    icon.className = 'cognify-fab-icon';
-    icon.innerText = 'C';
-    
-    const text = document.createElement('div');
-    text.className = 'cognify-fab-text';
-    text.innerText = 'View Analysis';
-    
-    fab.appendChild(icon);
-    fab.appendChild(text);
-    
-    fab.addEventListener('click', () => {
-        if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
-        chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
+// ─── Core Analysis ───────────────────────────────────────────────────────────
+
+// Helper to get a stable video ID from any YouTube URL (watch or shorts)
+function getVideoId(urlStr) {
+  try {
+    const url = new URL(urlStr);
+    if (url.pathname === '/watch') {
+      return url.searchParams.get('v');
+    }
+    if (url.pathname.startsWith('/shorts/')) {
+      return url.pathname.split('/')[2];
+    }
+  } catch (e) {}
+  return null;
+}
+
+function extractDataFromPlayer(expectedVideoId) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({
+      type: 'EXTRACT_PLAYER_DATA',
+      expectedVideoId
+    }, (response) => {
+      if (chrome.runtime.lastError || !response) {
+        resolve({ title: document.title.replace(' - YouTube', ''), transcript: null });
+      } else {
+        resolve(response);
+      }
     });
-    
-    document.body.appendChild(fab);
+  });
 }
-
-injectFAB();
 
 async function analyzeCurrentVideo() {
-    const titleEl = document.querySelector('ytd-watch-metadata #title h1, h1.title, #title > h1');
-    const title = titleEl ? titleEl.innerText : document.title;
-    
-    // Remove existing badge if any
-    const existingBadge = document.querySelector('.cognify-badge');
-    if (existingBadge) existingBadge.remove();
+  const url = window.location.href;
+  const currentVideoId = getVideoId(url);
+  
+  if (!currentVideoId) return; // Not a video page
+  
+  const lastVideoId = lastUrl ? getVideoId(lastUrl) : null;
+  if (currentVideoId === lastVideoId) {
+    lastUrl = url; // Update lastUrl but skip re-analysis
+    return;
+  }
+  
+  lastUrl = url;
 
-    // 2. Request analysis
-    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) {
-        console.debug('Cognify: Extension context invalidated. Please refresh the page.');
+  injectLoadingBadge();
+
+  // Extract title and transcript directly from the YouTube player to avoid SPA staleness
+  const data = await extractDataFromPlayer(currentVideoId);
+  const title = data.title || document.title.replace(' - YouTube', '');
+  const transcript = data.transcript;
+
+  // Send to service worker
+  chrome.runtime.sendMessage(
+    { type: 'ANALYZE', url, title, transcript },
+    (response) => {
+      if (chrome.runtime.lastError) {
+        injectErrorBadge('Reload extension (service worker not ready)');
         return;
+      }
+      if (response?.error) {
+        injectErrorBadge(response.error);
+        return;
+      }
+      if (response?.data) {
+        injectResultBadge(response.data);
+      }
     }
-    
-    chrome.runtime.sendMessage({
-        type: 'ANALYZE_CONTENT',
-        url: window.location.href,
-        title: title,
-        platform: 'youtube'
-    }, (response) => {
-        if (!response) return; // Port closed or timeout
-        if (response.status === 401) {
-            console.log('Cognify: Unauthorized, please log in via popup.');
-            return;
-        }
-        if (response.success && response.data) {
-            injectBadge(response.data);
-        }
-    });
+  );
 }
 
-const emotionIcons = {
-    joy: '✨', anger: '⚡', fear: '👀', sadness: '🌧️', surprise: '😲', disgust: '🤢', neutral: '😐'
-};
+// ─── SPA Navigation Detection ─────────────────────────────────────────────────
 
-function injectBadge(data) {
-    const titleRenderer = document.querySelector('ytd-watch-metadata #title h1, h1.title, #title > h1');
-    if (!titleRenderer) return;
+// 1. YouTube native event for SPA navigation
+document.addEventListener('yt-navigate-finish', () => {
+  analyzeCurrentVideo();
+});
 
-    const badge = document.createElement('div');
-    
-    // Determine color
-    const score = data.score || 0;
-    let colorClass = 'red';
-    if (score > 60) colorClass = 'green';
-    else if (score >= 30) colorClass = 'amber';
-    
-    badge.className = `cognify-badge ${colorClass}`;
-    
-    // Format text
-    const emotionIcon = emotionIcons[data.dominantEmotion] || '🧠';
-    const emotionName = data.dominantEmotion ? data.dominantEmotion.charAt(0).toUpperCase() + data.dominantEmotion.slice(1) : 'Neutral';
-    const toxScore = data.toxicity && data.toxicity.overall ? Math.round(data.toxicity.overall * 100) : 0;
-    
-    badge.innerHTML = `
-        <span class="badge-highlight">${emotionIcon} High ${emotionName}</span>
-        <span class="cognify-separator">•</span>
-        <span>Toxicity: ${toxScore}%</span>
-        <span class="cognify-separator">•</span>
-        <span class="badge-highlight">Match: ${score}%</span>
-        <span class="cognify-separator">•</span>
-        <span class="cognify-brand">Cognify</span>
-    `;
+// 2. Fallback mutation observer (catches initial loads and fallback state changes)
+const observer = new MutationObserver(() => {
+  const url = window.location.href;
+  if (url !== lastUrl && getVideoId(url)) {
+    analyzeCurrentVideo();
+  }
+});
 
-    badge.addEventListener('click', () => {
-        if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.id) return;
-        chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
-    });
+observer.observe(document.querySelector('title') || document.documentElement, {
+  subtree: true,
+  childList: true,
+  characterData: true
+});
 
-    titleRenderer.parentElement.insertBefore(badge, titleRenderer.nextSibling);
-}
+// Also run on initial load
+setTimeout(analyzeCurrentVideo, 1000);

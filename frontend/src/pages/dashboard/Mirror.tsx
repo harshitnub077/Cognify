@@ -1,43 +1,66 @@
 import React, { useMemo } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, LineChart, Line, XAxis, Tooltip as RechartsTooltip } from 'recharts';
-import { useDriftScore, useEmotionTimeline } from '../../hooks/useDashboardData';
+import { useDriftScore, useEmotionTimeline, useWeeklyReport, useDashboardStats } from '../../hooks/useDashboardData';
+import { Skeleton } from '../../components/Skeleton';
 import { cn } from '../../lib/utils';
 import { format, subDays } from 'date-fns';
+import { IconSparkles, IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
 
 const Mirror = () => {
   const { data: driftData, isLoading: driftLoading } = useDriftScore();
   const { data: timelineData } = useEmotionTimeline();
+  const { data: weeklyReport, isLoading: reportLoading } = useWeeklyReport();
+  const { data: stats } = useDashboardStats();
 
-  const [heatmapData] = React.useState(() => {
+  // Build a real heatmap from timeline data
+  const heatmapData = useMemo(() => {
+    const byDate: Record<string, number> = {};
+    (timelineData || []).forEach((item: any) => {
+      byDate[item.date] = Math.round((item.averageScore || 0) * 100);
+    });
+
     return Array.from({ length: 365 }).map((_, i) => {
       const d = subDays(new Date(), 364 - i);
-      const hasData = Math.random() > 0.3;
-      return {
-        date: d,
-        score: hasData ? Math.floor(Math.random() * 100) : null,
-        count: hasData ? Math.floor(Math.random() * 5) + 1 : 0
-      };
+      const key = format(d, 'yyyy-MM-dd');
+      const score = byDate[key] ?? null;
+      return { date: d, score, count: score !== null ? 1 : 0 };
     });
-  });
+  }, [timelineData]);
 
-  const [barHeights] = React.useState(() => {
-    return [...Array(12)].map(() => 20 + Math.random() * 80);
-  });
+  // Build drift trend from timeline
+  const driftTrendData = useMemo(() => {
+    if (!timelineData || timelineData.length === 0) {
+      return [{ week: 'W1', score: 0 }];
+    }
+    return timelineData.slice(-6).map((item: any, i: number) => ({
+      week: `W${i + 1}`,
+      score: Math.round((item.averageScore || 0) * 100)
+    }));
+  }, [timelineData]);
 
-  if (driftLoading) {
-    return <div className="flex h-[60vh] items-center justify-center text-slate-500">Gazing into the mirror...</div>;
-  }
+  // Build radar from emotion averages
+  const radarData = useMemo(() => {
+    if (!timelineData || timelineData.length === 0) return [
+      { subject: 'Focus', A: 0, fullMark: 100 },
+      { subject: 'Calmness', A: 0, fullMark: 100 },
+      { subject: 'Creativity', A: 0, fullMark: 100 },
+      { subject: 'Growth', A: 0, fullMark: 100 },
+      { subject: 'Logic', A: 0, fullMark: 100 },
+    ];
 
-  // Mock Radar Data
-  const radarData = [
-    { subject: 'Focus', A: 80, B: 60, fullMark: 100 },
-    { subject: 'Calmness', A: 65, B: 85, fullMark: 100 },
-    { subject: 'Creativity', A: 90, B: 70, fullMark: 100 },
-    { subject: 'Growth', A: 85, B: 90, fullMark: 100 },
-    { subject: 'Logic', A: 75, B: 65, fullMark: 100 },
-  ];
+    const avg = (key: string) => {
+      const vals = timelineData.map((d: any) => (d.emotions?.[key] || 0) * 100);
+      return vals.length ? Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length) : 0;
+    };
 
-
+    return [
+      { subject: 'Focus',      A: Math.max(10, 100 - avg('anger') - avg('fear')), fullMark: 100 },
+      { subject: 'Calmness',   A: Math.max(10, 100 - avg('anger') - avg('sadness')), fullMark: 100 },
+      { subject: 'Creativity', A: Math.max(10, avg('joy') + avg('surprise')), fullMark: 100 },
+      { subject: 'Growth',     A: stats?.stats?.consciousPercentage || 0, fullMark: 100 },
+      { subject: 'Logic',      A: stats?.stats?.avgScore || 0, fullMark: 100 },
+    ];
+  }, [timelineData, stats]);
 
   const getHeatmapColor = (score: number | null) => {
     if (score === null) return 'bg-slate-100 dark:bg-[#1A1A1A]';
@@ -47,119 +70,155 @@ const Mirror = () => {
     return 'bg-[#6C4FF6]';
   };
 
-  const driftScore = driftData?.score || 12;
-  const driftTrendData = [
-    { week: 'W1', score: 5 }, { week: 'W2', score: -2 }, { week: 'W3', score: 8 },
-    { week: 'W4', score: 15 }, { week: 'W5', score: 10 }, { week: 'W6', score: 12 },
-  ];
+  const driftScore = driftData?.score ?? 0;
+  const driftTrend = driftData?.trend || 'stable';
+
+  if (driftLoading) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-[300px] rounded-xl" />)}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20">
-      <header className="mb-6">
+      <header className="mb-2">
         <h1 className="text-2xl font-bold">My Mirror</h1>
         <p className="text-slate-500 text-sm">A reflection of your digital consumption and its impact on your identity.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Left Column: Cognitive Timeline & Heatmap */}
+
+        {/* Left — Heatmap + Radar */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
-            <h3 className="text-lg font-bold mb-4">Cognitive Timeline</h3>
-            
-            {/* Heatmap Grid */}
+          <div className="bg-white/80 dark:bg-[#111]/80 backdrop-blur-xl border border-slate-200/50 dark:border-[#222]/50 rounded-2xl p-6 shadow-sm transition-all hover:shadow-md">
+            <h3 className="text-lg font-bold mb-4">Cognitive Heatmap</h3>
             <div className="flex gap-1 overflow-x-auto pb-2 custom-scrollbar">
               <div className="grid grid-rows-7 grid-flow-col gap-1 min-w-max">
                 {heatmapData.map((day, i) => (
-                  <div 
-                    key={i} 
-                    className={cn("w-3 h-3 rounded-[2px]", getHeatmapColor(day.score))}
-                    title={`${format(day.date, 'MMM do')}: ${day.score !== null ? `${day.score}% Match (${day.count} items)` : 'No data'}`}
+                  <div
+                    key={i}
+                    className={cn('w-3 h-3 rounded-[2px]', getHeatmapColor(day.score))}
+                    title={`${format(day.date, 'MMM do')}: ${day.score !== null ? `${day.score}% Alignment` : 'No data'}`}
                   />
                 ))}
               </div>
             </div>
-
-            <div className="mt-6">
-              <h4 className="text-xs uppercase font-bold text-slate-500 mb-2">Monthly Averages</h4>
-              <div className="flex items-end gap-2 h-20">
-                {barHeights.map((h, i) => (
-                  <div key={i} className="flex-1 bg-slate-100 dark:bg-[#1A1A1A] rounded-t-sm relative group">
-                    <div className="absolute bottom-0 w-full bg-[#6C4FF6]/50 rounded-t-sm transition-all group-hover:bg-[#6C4FF6]" style={{ height: `${h}%` }} />
-                  </div>
+            <div className="flex items-center gap-3 mt-4 text-xs text-slate-500">
+              <span>Less</span>
+              <div className="flex gap-1">
+                {['bg-[#6C4FF6]/20', 'bg-[#6C4FF6]/50', 'bg-[#6C4FF6]/80', 'bg-[#6C4FF6]'].map((c, i) => (
+                  <div key={i} className={cn('w-3 h-3 rounded-[2px]', c)} />
                 ))}
               </div>
+              <span>More</span>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#222] rounded-xl p-6 shadow-sm">
+          <div className="bg-white/80 dark:bg-[#111]/80 backdrop-blur-xl border border-slate-200/50 dark:border-[#222]/50 rounded-2xl p-6 shadow-sm transition-all hover:shadow-md">
             <h3 className="text-lg font-bold mb-4">Personality Radar</h3>
-            <div className="h-[300px] w-full">
+            <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                   <PolarGrid stroke="#333" />
                   <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 12 }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                  <Radar name="Current State" dataKey="A" stroke="#6C4FF6" fill="#6C4FF6" fillOpacity={0.4} />
-                  <Radar name="Goal State" dataKey="B" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
-                  <RechartsTooltip contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333' }} />
+                  <Radar name="Your State" dataKey="A" stroke="#6C4FF6" fill="#6C4FF6" fillOpacity={0.4} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', borderRadius: '8px' }} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex justify-center gap-6 mt-4 text-sm font-medium">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#6C4FF6]/40 border border-[#6C4FF6]" /> Current State</div>
-              <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#10b981]/20 border border-[#10b981]" /> Goal State</div>
-            </div>
           </div>
         </div>
 
-        {/* Right Column: Identity Drift */}
+        {/* Right — Drift Score + Weekly Report */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#222] rounded-xl p-6 shadow-sm flex flex-col items-center text-center">
-            <h3 className="text-lg font-bold self-start w-full text-left mb-6">Identity Drift Score</h3>
-            
-            <div className="relative w-48 h-24 mb-4">
-              <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
-                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" strokeLinecap="round" />
-                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" 
-                  stroke={driftScore >= 30 ? "#10b981" : driftScore >= 0 ? "#f59e0b" : "#ef4444"} 
-                  strokeWidth="8" strokeLinecap="round" 
-                  strokeDasharray={`${((driftScore + 100) / 200) * 125.6}, 126`} 
-                />
-              </svg>
-              <div className="absolute bottom-0 left-0 w-full text-4xl font-bold">
-                {driftScore > 0 ? '+' : ''}{driftScore}
+
+          <div className="bg-white/80 dark:bg-[#111]/80 backdrop-blur-xl border border-slate-200/50 dark:border-[#222]/50 rounded-2xl p-6 shadow-sm transition-all hover:shadow-md">
+            <h3 className="text-lg font-bold mb-4">Identity Drift Score</h3>
+            <div className="flex items-center gap-6 mb-6">
+              <div className="relative w-36 h-20">
+                <svg viewBox="0 0 100 50" className="w-full h-full overflow-visible">
+                  <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" strokeLinecap="round" />
+                  <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none"
+                    stroke={driftScore >= 30 ? '#10b981' : driftScore >= 0 ? '#f59e0b' : '#ef4444'}
+                    strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${((Math.abs(driftScore) + 0.01) / 100) * 125.6} 126`}
+                  />
+                </svg>
+                <div className="absolute bottom-0 left-0 w-full text-3xl font-bold text-center">
+                  {driftScore > 0 ? '+' : ''}{Math.round(driftScore)}
+                </div>
+              </div>
+              <div>
+                <div className={cn('flex items-center gap-1 font-bold text-sm mb-1',
+                  driftTrend === 'improving' ? 'text-emerald-500' :
+                  driftTrend === 'declining' ? 'text-red-500' : 'text-amber-500'
+                )}>
+                  {driftTrend === 'improving' ? <IconTrendingUp size={16} /> : <IconTrendingDown size={16} />}
+                  {driftTrend}
+                </div>
+                <p className="text-xs text-slate-500">How aligned your content diet is with your stated goals</p>
               </div>
             </div>
 
-            <div className="h-24 w-full mt-6 mb-6">
+            <div className="h-20 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={driftTrendData}>
-                  <Line type="monotone" dataKey="score" stroke="#A7A9BE" strokeWidth={2} dot={{ r: 3, fill: '#A7A9BE' }} />
+                  <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} />
+                  <Line type="monotone" dataKey="score" stroke="#6C4FF6" strokeWidth={2} dot={{ r: 3, fill: '#6C4FF6' }} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#333', borderRadius: '8px' }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </div>
 
-            <div className="w-full text-left bg-slate-50 dark:bg-[#1A1A1A] p-5 rounded-xl border border-slate-100 dark:border-[#222]">
-              <h4 className="font-bold text-sm mb-3">Your Drift Story</h4>
-              <ul className="space-y-3 text-sm text-slate-600 dark:text-[#A7A9BE]">
-                <li className="flex items-start gap-2">
-                  <span className="text-[#6C4FF6] mt-0.5">•</span>
-                  You consumed 68% goal-aligned content this week (+12% vs last week).
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#6C4FF6] mt-0.5">•</span>
-                  Spikes in anxiety-inducing content observed late evening on Tuesday.
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-[#6C4FF6] mt-0.5">•</span>
-                  Strong momentum in educational content related to 'Deep Work'.
-                </li>
-              </ul>
-            </div>
+          {/* Weekly AI Report */}
+          <div className="bg-white/80 dark:bg-[#111]/80 backdrop-blur-xl border border-slate-200/50 dark:border-[#222]/50 rounded-2xl p-6 shadow-sm transition-all hover:shadow-md">
+            <h3 className="text-lg font-bold flex items-center gap-2 mb-5">
+              <IconSparkles size={20} className="text-[#6C4FF6]" /> Weekly Mind Report
+            </h3>
+            {reportLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-3/4 rounded" />
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-4 w-5/6 rounded" />
+              </div>
+            ) : weeklyReport ? (
+              <div className="space-y-4 text-sm">
+                <div className="text-xl font-bold text-[#6C4FF6]">{weeklyReport.headline}</div>
+
+                <div className="space-y-2 text-slate-600 dark:text-[#A7A9BE]">
+                  {(weeklyReport.drift_story || []).map((s: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-[#6C4FF6] mt-0.5">•</span>
+                      <span>{s}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {weeklyReport.pattern_detected && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Pattern: {weeklyReport.pattern_detected}</span>
+                    <p className="text-xs text-amber-700 dark:text-amber-500/80 mt-1">{weeklyReport.pattern_explanation}</p>
+                  </div>
+                )}
+
+                {weeklyReport.next_week_focus && (
+                  <div className="p-3 bg-[#6C4FF6]/10 border border-[#6C4FF6]/20 rounded-lg">
+                    <span className="text-xs font-bold text-[#6C4FF6] uppercase tracking-wider">Focus Next Week</span>
+                    <p className="text-xs text-slate-600 dark:text-[#A7A9BE] mt-1">{weeklyReport.next_week_focus}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500 py-4 text-center">
+                Analyze more content to unlock your weekly mind report.
+              </div>
+            )}
           </div>
         </div>
-
       </div>
     </div>
   );

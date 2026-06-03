@@ -1,59 +1,90 @@
-// API Base URL
-const API_BASE = 'http://localhost:3001/api';
+// service-worker.js — Cognify Background Service Worker
+// Passes analysis requests to the backend with the user's auth token
 
-// On install, setup initial state
-chrome.runtime.onInstalled.addListener(async () => {
-  await chrome.storage.local.set({ extension_active: true, analysis_history: [] });
-  // Side panel should open on specific triggers, not on action click (since we have a popup)
-});
-
-// Handle messages from content scripts and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'SYNC_TOKEN') {
-    (async () => {
-      await chrome.storage.local.set({ cognify_token: message.token });
-      sendResponse({ success: true });
-    })();
-    return true;
-  }
-
-  if (message.type === 'GET_USER_TOKEN') {
-    (async () => {
-      const data = await chrome.storage.local.get('cognify_token');
-      sendResponse({ token: data.cognify_token || null });
-    })();
-    return true; // Keep channel open for async
-  }
-
-  if (message.type === 'OPEN_SIDE_PANEL') {
-    (async () => {
-      // Must use the windowId of the sender
-      if (sender.tab && sender.tab.windowId) {
-        try {
-            await chrome.sidePanel.open({ windowId: sender.tab.windowId });
-        } catch (err) {
-            console.error('Failed to open side panel:', err);
+  if (message.type === 'EXTRACT_PLAYER_DATA') {
+    chrome.scripting.executeScript({
+      target: { tabId: sender.tab.id },
+      world: "MAIN",
+      args: [message.expectedVideoId],
+      func: async (expectedVideoId) => {
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+        let attempts = 0;
+        while (attempts++ < 20) {
+          try {
+            const player = document.querySelector('#movie_player');
+            if (!player || !player.getPlayerResponse || !player.getVideoData) {
+              await sleep(250);
+              continue;
+            }
+            
+            const currentId = player.getVideoData().video_id;
+            const response = player.getPlayerResponse();
+            
+            if (currentId !== expectedVideoId || response?.videoDetails?.videoId !== expectedVideoId) {
+              await sleep(250);
+              continue;
+            }
+            
+            // response already declared above
+            const title = response?.videoDetails?.title || document.title.replace(' - YouTube', '');
+            
+            const tracks = response?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+            if (!tracks || tracks.length === 0) {
+              return { title, transcript: null };
+            }
+            
+            const track = tracks.find(t => t.languageCode === 'en' || t.languageCode.startsWith('en')) || tracks[0];
+            if (!track || !track.baseUrl) {
+              return { title, transcript: null };
+            }
+            
+            const res = await fetch(track.baseUrl);
+            const xml = await res.text();
+            const textMatches = xml.match(/<text.*?>([\s\S]*?)<\/text>/g);
+            if (!textMatches) return { title, transcript: null };
+            
+            const transcript = textMatches.map(t => {
+              return t.replace(/<text.*?>|<\/text>/g, '')
+                      .replace(/&amp;/g, '&')
+                      .replace(/&quot;/g, '"')
+                      .replace(/&#39;/g, "'")
+                      .replace(/&lt;/g, '<')
+                      .replace(/&gt;/g, '>');
+            }).join(' ').replace(/\s+/g, ' ');
+            
+            const safeTranscript = transcript.length > 200000 
+              ? transcript.substring(0, 200000) + " ... [Truncated]" 
+              : transcript;
+              
+            return { title, transcript: safeTranscript };
+          } catch (e) {
+            await sleep(250);
+          }
         }
+        return { title: document.title.replace(' - YouTube', ''), transcript: null };
       }
-      sendResponse({ success: true });
-    })();
+    }).then((results) => {
+      sendResponse(results[0].result);
+    }).catch((err) => {
+      console.error('[Cognify SW] Scripting error:', err);
+      sendResponse({ title: null, transcript: null });
+    });
     return true;
   }
 
-  if (message.type === 'ANALYZE_CONTENT') {
+
+  if (message.type === 'ANALYZE') {
     (async () => {
       try {
-        const { cognify_token, extension_active } = await chrome.storage.local.get(['cognify_token', 'extension_active']);
-        
-        if (!extension_active) {
-            return sendResponse({ success: false, error: 'Extension disabled' });
-        }
-        
+        const { cognify_token } = await chrome.storage.local.get('cognify_token');
+
         if (!cognify_token) {
-          return sendResponse({ success: false, status: 401, error: 'Unauthorized' });
+          sendResponse({ error: 'Please login to Cognify Dashboard first' });
+          return;
         }
 
-        const response = await fetch(`${API_BASE}/content/analyze`, {
+        const response = await fetch('http://localhost:3001/api/content/analyze', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -62,38 +93,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           body: JSON.stringify({
             url: message.url,
             title: message.title,
-            platform: message.platform
+            transcript: message.transcript
           })
         });
 
-        if (response.status === 401) {
-          await chrome.storage.local.remove('cognify_token');
-          return sendResponse({ success: false, status: 401, error: 'Unauthorized' });
+        if (!response.ok) {
+          const text = await response.text();
+          console.error('[Cognify SW] Backend error:', text);
+          sendResponse({ error: `Backend error: ${response.status}` });
+          return;
         }
 
-        const data = await response.json();
-        
-        if (data.success) {
-            // Save to offline cache (last 20)
-            const { analysis_history = [] } = await chrome.storage.local.get('analysis_history');
-            const newHistory = [data.data, ...analysis_history].slice(0, 20);
-            
-            // Set current active analysis for the side panel
-            await chrome.storage.local.set({ 
-                analysis_history: newHistory,
-                active_analysis: data.data
-            });
-            
-            sendResponse({ success: true, data: data.data });
-        } else {
-            sendResponse({ success: false, error: data.error });
-        }
+        const json = await response.json();
+        const data = json.data;
 
-      } catch (error) {
-        console.error('Analysis API Error:', error);
-        sendResponse({ success: false, error: 'Network Error', willRetry: true });
+        // Persist last analysis to storage for the popup
+        await chrome.storage.local.set({
+          lastAnalysis: {
+            title: data.title,
+            url: data.url,
+            isConscious: data.isConscious,
+            dominantEmotion: data.dominantEmotion,
+            score: data.score,
+            summary: data.summary,
+            tags: data.tags
+          }
+        });
+
+        sendResponse({ data });
+      } catch (err) {
+        console.error('[Cognify SW] fetch error:', err);
+        sendResponse({ error: 'Cognify backend offline' });
       }
     })();
-    return true; 
+    return true; // keep message channel open for async response
   }
 });

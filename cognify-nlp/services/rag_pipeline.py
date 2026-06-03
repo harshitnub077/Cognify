@@ -64,12 +64,20 @@ retriever = ContextualCompressionRetriever(
     )
 )
 
-# Initialize Local LLM via HuggingFacePipeline (100% Free)
-llm = HuggingFacePipeline.from_model_id(
-    model_id="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-    task="text-generation",
-    pipeline_kwargs={"max_new_tokens": 1024, "do_sample": False}
-)
+# Initialize Local LLM via HuggingFacePipeline — LAZY LOADED (avoids 30-60s startup delay)
+_llm = None
+
+def get_llm():
+    global _llm
+    if _llm is None:
+        print("Loading TinyLlama (first use only)...")
+        _llm = HuggingFacePipeline.from_model_id(
+            model_id="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+            task="text-generation",
+            pipeline_kwargs={"max_new_tokens": 1024, "do_sample": False}
+        )
+    return _llm
+
 
 QUERY_REWRITE_PROMPT = """
 Given a user's identity goal, generate 4 specific YouTube search queries
@@ -146,7 +154,8 @@ Retrieved content: {context}</s>
 ["""
 
     prompt = PromptTemplate.from_template(template)
-    chain = prompt | llm
+    chain = prompt | get_llm()
+
     
     try:
         response = await chain.ainvoke({

@@ -10,7 +10,6 @@ export const useDashboardStats = () => {
       return res.data;
     },
     staleTime: 5 * 60 * 1000,
-    refetchInterval: 5000, // Poll every 5s for real-time updates
   });
 };
 
@@ -22,7 +21,6 @@ export const useEmotionTimeline = () => {
       return res.data.data;
     },
     staleTime: 5 * 60 * 1000,
-    refetchInterval: 5000,
   });
 };
 
@@ -45,7 +43,6 @@ export const useContentHistory = (params?: { page?: number, limit?: number }) =>
       return res.data;
     },
     staleTime: 5 * 60 * 1000,
-    refetchInterval: 5000,
   });
 };
 
@@ -147,7 +144,8 @@ export const useBlindSpot = () => {
       const res = await api.post('/analytics/blind-spot');
       return res.data;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours — Gemini call, changes rarely
+    gcTime: 24 * 60 * 60 * 1000,
   });
 };
 
@@ -159,5 +157,41 @@ export const useAnnualReport = (year: number) => {
       return res.data.data;
     },
     staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useWeeklyReport = () => {
+  return useQuery({
+    queryKey: ['weekly-report'],
+    queryFn: async () => {
+      const res = await api.get('/analytics/weekly-report');
+      return res.data.data;
+    },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours — Gemini call, changes weekly
+    gcTime: 24 * 60 * 60 * 1000,
+  });
+};
+
+export const useUserProfile = () => {
+  return useQuery({
+    queryKey: ['user-profile'],
+    queryFn: async () => {
+      const res = await api.get('/user/profile');
+      return res.data.profile;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useDeleteContent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/content/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['content-history'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    }
   });
 };

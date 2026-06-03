@@ -8,6 +8,10 @@ const router = Router();
 
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
+// Simple in-memory cache to prevent Gemini API exhaustion
+const aiCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 router.get('/emotion-timeline', requireAuth, async (req: AuthRequest, res) => {
     try {
         const userId = req.user.id;
@@ -148,6 +152,14 @@ router.post('/blind-spot', requireAuth, async (req: any, res: any) => {
     }
 
     const userId = req.user.id;
+    
+    // Check Cache
+    const cacheKey = `blindspot_${userId}`;
+    const cached = aiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return res.json(cached.data);
+    }
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -178,6 +190,10 @@ router.post('/blind-spot', requireAuth, async (req: any, res: any) => {
     }
 
     const analysis = JSON.parse(text);
+    
+    // Save to Cache
+    aiCache.set(cacheKey, { data: analysis, timestamp: Date.now() });
+    
     return res.json(analysis);
   } catch (error) {
     console.error('Error analyzing blind spots:', error);
@@ -218,6 +234,14 @@ router.get('/weekly-report', requireAuth, async (req: AuthRequest, res: any) => 
         }
         
         const userId = req.user.id;
+
+        // Check Cache
+        const cacheKey = `weeklyreport_${userId}`;
+        const cached = aiCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+            return res.json({ success: true, data: cached.data });
+        }
+
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -227,7 +251,7 @@ router.get('/weekly-report', requireAuth, async (req: AuthRequest, res: any) => 
         });
 
         const profile = await prisma.userProfile.findUnique({ where: { userId } });
-        const goals = profile?.focusAreas?.join(', ') || 'None specified';
+        const goals = (profile as any)?.identities?.join(', ') || (profile as any)?.focusAreas?.join(', ') || 'None specified';
 
         const driftScores = await prisma.driftScore.findMany({
             where: { userId },
@@ -262,6 +286,10 @@ router.get('/weekly-report', requireAuth, async (req: AuthRequest, res: any) => 
         }
 
         const report = JSON.parse(text);
+
+        // Save to Cache
+        aiCache.set(cacheKey, { data: report, timestamp: Date.now() });
+
         res.json({ success: true, data: report });
     } catch (error) {
         console.error('Error generating weekly report:', error);

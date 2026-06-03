@@ -33,7 +33,9 @@ model UserProfile {
   displayName String?
   avatarUrl   String?
   onboarded   Boolean  @default(false)
-  focusAreas  String[] // Array of areas they want to focus on (e.g., productivity, learning)
+  focusAreas  String[] // Selected identity cards
+  reduceGoals String[] // Selected things to reduce
+  platforms   String[] // Selected platforms
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -61,6 +63,10 @@ model ContentLog {
   timeSpentSecs Int @default(0)
 
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, isConscious])
 }
 
 model DriftScore {
@@ -72,6 +78,8 @@ model DriftScore {
   date    DateTime @default(now()) // Can be aggregated daily
   factors Json? // Why the score is what it is
   trend   String? // 'improving', 'declining', 'stable'
+
+  @@index([userId, date(sort: Desc)])
 }
 
 model Streak {

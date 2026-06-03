@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { useAuthStore } from './store/useAuthStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './components/ThemeProvider';
 
 // Code-split all page components with React.lazy
 const Home = React.lazy(() => import('./pages/Home'));
@@ -46,11 +47,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => {
   const location = useLocation();
+  // Key off only the top-level route segment (e.g. "/" | "/dashboard" | "/onboarding")
+  // This prevents DashboardLayout from being destroyed/remounted on sub-route changes.
+  // The PageTransition inside DashboardLayout handles the inner animations.
+  const topLevelKey = '/' + location.pathname.split('/')[1];
   
   return (
     <React.Suspense fallback={<LoadingSpinner />}>
       <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+        <Routes location={location} key={topLevelKey}>
           <Route path="/" element={<Home />} />
           <Route path="/report/:year" element={<AnnualReport />} />
           <Route 
@@ -90,6 +95,7 @@ const AppRoutes = () => {
   );
 };
 
+
 function App() {
   const { initialize } = useAuthStore();
 
@@ -110,7 +116,9 @@ function App() {
             },
           }}
         />
-        <AppRoutes />
+        <ThemeProvider>
+          <AppRoutes />
+        </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

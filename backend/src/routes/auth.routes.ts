@@ -34,23 +34,9 @@ router.post('/sync', requireAuth, async (req: AuthRequest, res) => {
       },
     });
 
-    // Mock queueing of last 5 YouTube history items
-    const mockYoutubeHistory = [
-      "https://youtube.com/watch?v=dQw4w9WgXcQ",
-      "https://youtube.com/watch?v=kYtGl1dX5qI",
-      "https://youtube.com/watch?v=jNQXAC9IVRw",
-      "https://youtube.com/watch?v=9bZkp7q19f0",
-      "https://youtube.com/watch?v=21X5lGlDOfg"
-    ];
+    // (Removed mock history queueing to prevent rate limit exhaustion)
 
-    for (const url of mockYoutubeHistory) {
-        await analysisQueue.add('analyze-url', { url, userId: user.id }, {
-            removeOnComplete: true,
-            removeOnFail: false
-        });
-    }
-
-    res.json({ user: dbUser, profile });
+    res.json({ user: dbUser, profile: { ...profile, identities: profile.focusAreas || [] } });
   } catch (error) {
     console.error('Error syncing user:', error);
     res.status(500).json({ error: 'Failed to sync user' });

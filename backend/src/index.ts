@@ -13,6 +13,7 @@ import recommendationsRoutes from './routes/recommendations.routes';
 import circlesRoutes from './routes/circles.routes';
 import reportsRoutes from './routes/reports.routes';
 import achievementsRoutes from './routes/achievements.routes';
+import userRoutes from './routes/user.routes';
 
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -40,7 +41,7 @@ app.use(express.json());
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 2000, // Limit each IP to 2000 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api', limiter);
@@ -59,6 +60,7 @@ app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/circles', circlesRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/achievements', achievementsRoutes);
+app.use('/api/user', userRoutes);
 
 // Sentry.setupExpressErrorHandler(app);
 
@@ -66,5 +68,3 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-// Force event loop to stay alive just in case
-setInterval(() => {}, 100000);

@@ -1,60 +1,32 @@
 import requests
-import time
-from config import config
+import os
 
-def analyze_toxicity(text: str) -> dict:
-    default_toxicity = {
-        "overall": 0.0,
-        "categories": {
-            "TOXICITY": 0.0,
-            "SEVERE_TOXICITY": 0.0,
-            "INSULT": 0.0,
-            "PROFANITY": 0.0,
-            "IDENTITY_ATTACK": 0.0,
-            "THREAT": 0.0
-        }
-    }
-    
-    if not text or not config.PERSPECTIVE_API_KEY or config.PERSPECTIVE_API_KEY.startswith("your_"):
-        return default_toxicity
+HF_TOKEN = os.getenv("HF_TOKEN")
+API_URL = "https://api-inference.huggingface.co/models/unitary/toxic-bert"
+headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
 
-    url = f"https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key={config.PERSPECTIVE_API_KEY}"
+def get_toxicity(text: str) -> dict:
+    fallback_response = {"overall": 0.0, "label": "safe"}
     
-    payload = {
-        "comment": {"text": text[:2000]}, # Max length for API
-        "languages": ["en"],
-        "requestedAttributes": {
-            "TOXICITY": {},
-            "SEVERE_TOXICITY": {},
-            "INSULT": {},
-            "PROFANITY": {},
-            "IDENTITY_ATTACK": {},
-            "THREAT": {}
-        }
-    }
-    
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            response = requests.post(url, json=payload)
-            
-            if response.status_code == 429: # Rate limit
-                time.sleep(2 ** attempt)
-                continue
+    if not HF_TOKEN:
+        return fallback_response
+
+    try:
+        response = requests.post(API_URL, headers=headers, json={"inputs": text}, timeout=3)
+        if response.status_code == 200:
+            results = response.json()
+            if isinstance(results, list) and len(results) > 0:
+                # Results usually come back sorted by score
+                # toxic-bert returns toxic, severe_toxic, obscene, threat, insult, identity_hate
+                max_score = 0.0
+                for item in results[0]:
+                    if item['label'] == 'toxic':
+                        max_score = item['score']
+                        break
                 
-            response.raise_for_status()
-            data = response.json()
-            
-            categories = {}
-            for attr, attr_data in data.get("attributeScores", {}).items():
-                categories[attr] = round(attr_data["summaryScore"]["value"], 4)
-                
-            return {
-                "overall": categories.get("TOXICITY", 0.0),
-                "categories": categories
-            }
-        except Exception as e:
-            print(f"Toxicity analysis failed on attempt {attempt+1}: {e}")
-            time.sleep(2 ** attempt)
-            
-    return default_toxicity
+                label = "toxic" if max_score > 0.5 else "safe"
+                return {"overall": max_score, "label": label}
+        return fallback_response
+    except Exception as e:
+        print(f"Toxicity API failed: {e}")
+        return fallback_response

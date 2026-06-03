@@ -1,0 +1,81 @@
+import { Router } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth';
+import prisma from '../lib/prisma';
+import { z } from 'zod';
+
+const router = Router();
+
+const onboardingSchema = z.object({
+  identities: z.array(z.string()),
+  reduceGoals: z.array(z.string()),
+  platforms: z.array(z.string())
+});
+
+// POST /api/user/onboarding
+router.post('/onboarding', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user.id;
+    const validation = onboardingSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error.issues[0].message });
+    }
+
+    const { identities, reduceGoals, platforms } = validation.data;
+
+    const profile = await prisma.userProfile.update({
+      where: { userId },
+      data: {
+        focusAreas: identities,
+        reduceGoals,
+        platforms,
+        onboarded: true,
+      },
+    });
+
+    res.json({ success: true, profile: { ...profile, identities: profile.focusAreas || [] } });
+  } catch (error) {
+    console.error('Error during onboarding:', error);
+    res.status(500).json({ error: 'Failed to complete onboarding' });
+  }
+});
+
+// GET /api/user/profile
+router.get('/profile', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user.id;
+    const profile = await prisma.userProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    res.json({ profile: { ...profile, identities: profile.focusAreas || [] } });
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+// PATCH /api/user/profile — update display name
+router.patch('/profile', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user.id;
+    const { displayName } = req.body;
+    if (!displayName || typeof displayName !== 'string' || displayName.trim().length === 0) {
+      return res.status(400).json({ error: 'Display name is required' });
+    }
+    const profile = await prisma.userProfile.update({
+      where: { userId },
+      data: { displayName: displayName.trim() }
+    });
+    res.json({ success: true, profile });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
+
+export default router;

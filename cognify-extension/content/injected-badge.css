@@ -1,0 +1,56 @@
+/* injected-badge.css — Cognify badge styles, blends with YouTube UI */
+
+#cognify-analysis-badge,
+.cognify-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  margin: 8px 0 4px 0;
+  border-radius: 4px;
+  border-left: 3px solid #6C4FF6;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(6px);
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e8e8e8;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  letter-spacing: 0.01em;
+  max-width: 640px;
+  flex-wrap: wrap;
+  transition: opacity 0.2s ease;
+}
+
+/* Dark YouTube background compatibility */
+ytd-app[dark] #cognify-analysis-badge,
+ytd-app[dark] .cognify-badge {
+  background: rgba(30, 30, 30, 0.85);
+  color: #e0e0e0;
+}
+
+.cognify-badge--loading {
+  opacity: 0.7;
+  animation: cognify-pulse 1.4s ease-in-out infinite;
+}
+
+.cognify-badge--error {
+  border-left-color: #EF4444;
+  color: #FCA5A5;
+}
+
+.cognify-verdict {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+}
+
+.cognify-sep {
+  opacity: 0.4;
+  font-size: 11px;
+}
+
+@keyframes cognify-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.9; }
+}

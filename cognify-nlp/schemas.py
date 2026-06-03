@@ -1,23 +1,11 @@
 from pydantic import BaseModel
-from typing import List, Dict, Optional
-from datetime import datetime
+from typing import Optional, Dict
 
 class AnalyzeRequest(BaseModel):
     url: str
-    user_goals: List[str]
-
-class BatchAnalyzeRequest(BaseModel):
-    urls: List[str]
-    user_goals: List[str]
-
-class ContentLogModel(BaseModel):
-    isConscious: bool
-    score: int
-    tags: List[str]
-
-class DriftRequest(BaseModel):
-    user_id: str
-    content_logs: List[ContentLogModel]
+    title: Optional[str] = None
+    transcript: Optional[str] = None
+    user_goals: list[str] = []
 
 class EmotionScores(BaseModel):
     joy: float
@@ -26,37 +14,30 @@ class EmotionScores(BaseModel):
     sadness: float
     surprise: float
     disgust: float
-    neutral: float
+    neutral: float = 0.0
 
-class ToxicityScores(BaseModel):
+class ToxicityScore(BaseModel):
     overall: float
-    categories: Dict[str, float]
+    label: str
 
 class GoalAlignment(BaseModel):
     score: float
-    matched_goals: List[str]
     reason: str
 
 class Insight(BaseModel):
     verdict: str
-    insight: str
+    text: str
     identity_impact: str
-    urgency: str
 
 class AnalyzeResponse(BaseModel):
     url: str
     title: str
     platform: str
     thumbnail: Optional[str]
-    emotions: EmotionScores
+    emotions: EmotionScores | dict
     dominant_emotion: str
-    toxicity: ToxicityScores
-    goal_alignment: GoalAlignment
-    content_tags: List[str]
-    recommendation: str
-    insight: Optional[Insight] = None
-    processed_at: str
-
-class DriftResponse(BaseModel):
-    drift_score: float
-    breakdown: Dict[str, float]
+    toxicity: ToxicityScore | dict
+    goal_alignment: GoalAlignment | dict
+    insight: Insight | dict
+    cached: bool
+    analyzed_at: str

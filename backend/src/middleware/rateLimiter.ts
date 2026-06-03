@@ -4,7 +4,7 @@ import { AuthRequest } from './auth';
 // Simple in-memory rate limiter (no Redis dependency for local dev)
 export const analyzeRateLimiter = rateLimit({
     windowMs: 24 * 60 * 60 * 1000, // 24 hours
-    limit: 50,
+    limit: 500,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     keyGenerator: (req) => {

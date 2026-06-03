@@ -1,36 +1,64 @@
-from models.loader import model_loader
-from config import config
+import requests
+import os
+from transformers import pipeline
 
-def analyze_emotion(text: str) -> dict:
-    default_scores = {
-        "joy": 0.0, "anger": 0.0, "fear": 0.0, 
-        "sadness": 0.0, "surprise": 0.0, "disgust": 0.0, "neutral": 1.0
-    }
+HF_TOKEN = os.getenv("HF_TOKEN")
+API_URL = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base"
+headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+
+# Load local pipeline lazily if needed
+local_pipeline = None
+
+def get_emotion(text: str) -> dict:
+    default_scores = {"joy": 0.0, "anger": 0.0, "fear": 0.0, "sadness": 0.0, "surprise": 0.0, "disgust": 0.0, "neutral": 0.0}
     
-    if not text:
-        return default_scores
+    # 1. Try HuggingFace Inference API
+    if HF_TOKEN:
+        try:
+            response = requests.post(API_URL, headers=headers, json={"inputs": text}, timeout=3)
+            if response.status_code == 200:
+                results = response.json()
+                if isinstance(results, list) and len(results) > 0:
+                    scores = default_scores.copy()
+                    for item in results[0]:
+                        label = item['label'].lower()
+                        if label in scores:
+                            scores[label] = item['score']
+                    dominant = max(scores, key=scores.get)
+                    return {"emotions": scores, "dominant_emotion": dominant}
+        except:
+            pass
 
-    if not model_loader.emotion_classifier:
-        print("Warning: Emotion classifier not loaded. Using fallback.")
-        return default_scores
-        
+    # 2. Try local transformers pipeline
+    global local_pipeline
     try:
-        # Split text into chunks of 1500 chars to avoid model max length errors and analyze whole video
-        chunk_size = 1500
-        chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)][:15] # up to 15 chunks
+        if local_pipeline is None:
+            # Load local model
+            local_pipeline = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", top_k=None)
         
-        all_scores = {k: 0.0 for k in default_scores}
-        
-        for chunk in chunks:
-            results = model_loader.emotion_classifier(chunk)
-            for item in results[0]:
-                all_scores[item['label']] += item['score']
-                
-        scores = {}
-        for label, total_score in all_scores.items():
-            scores[label] = round(total_score / len(chunks), 4)
-            
-        return scores
+        results = local_pipeline(text)
+        scores = default_scores.copy()
+        for item in results[0]:
+            label = item['label'].lower()
+            if label in scores:
+                scores[label] = item['score']
+        dominant = max(scores, key=scores.get)
+        return {"emotions": scores, "dominant_emotion": dominant}
     except Exception as e:
-        print(f"Emotion analysis failed: {e}")
-        return default_scores
+        print(f"Local emotion pipeline failed: {e}")
+        pass
+
+    # 3. Keyword Heuristic Fallback
+    text_lower = text.lower()
+    scores = default_scores.copy()
+    if any(w in text_lower for w in ['happy', 'great', 'awesome', 'good', 'joy']):
+        scores['joy'] = 0.8
+    elif any(w in text_lower for w in ['angry', 'mad', 'hate', 'rage', 'awful']):
+        scores['anger'] = 0.8
+    elif any(w in text_lower for w in ['sad', 'depressed', 'cry', 'upset']):
+        scores['sadness'] = 0.8
+    else:
+        scores['neutral'] = 0.8
+    
+    dominant = max(scores, key=scores.get)
+    return {"emotions": scores, "dominant_emotion": dominant}

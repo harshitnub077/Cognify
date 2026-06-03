@@ -6,7 +6,22 @@
 
 @layer base {
   body {
-    @apply bg-background-light text-slate-900 dark:bg-background-dark dark:text-slate-100 font-sans antialiased transition-colors duration-300;
+    @apply bg-[#F8FAFC] text-slate-900 dark:bg-[#000000] dark:text-slate-100 font-sans antialiased transition-colors duration-500;
+  }
+
+  /* Custom Scrollbar for a premium feel */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 dark:bg-[#333] rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-300 dark:bg-[#444];
   }
 }
 

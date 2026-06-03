@@ -9,7 +9,7 @@ let prisma: PrismaClient;
 
 if (!global.__prisma) {
   if (rawUrl.startsWith('postgres://') || rawUrl.startsWith('postgresql://')) {
-    const pool = new Pool({ connectionString: rawUrl, max: 1 });
+    const pool = new Pool({ connectionString: rawUrl, max: 10 });
     const adapter = new PrismaPg(pool);
     global.__prisma = new PrismaClient({ adapter } as any);
   } else {

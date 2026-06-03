@@ -234,12 +234,7 @@ const Coach = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#222] rounded-xl p-4 shadow-sm flex flex-col justify-center items-center">
-              <h4 className="text-xs font-bold uppercase text-slate-500 mb-2">Current Streak</h4>
-              <div className="flex items-center gap-2 text-2xl font-bold text-orange-500">
-                <IconFlame size={28} className="fill-orange-500" /> {stats?.streak || 0}
-              </div>
-            </div>
+
           </div>
 
           <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#222] rounded-xl p-5 shadow-sm">

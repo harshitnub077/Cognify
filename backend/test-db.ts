@@ -1,13 +1,9 @@
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 async function main() {
-  try {
-    await prisma.$connect()
-    console.log("Connected!")
-  } catch (e) {
-    console.error(e)
-  } finally {
-    await prisma.$disconnect()
-  }
+  console.time('query');
+  const logs = await prisma.contentLog.findMany({ take: 5 });
+  console.timeEnd('query');
+  console.log('Got', logs.length, 'logs');
 }
-main()
+main().catch(console.error).finally(() => prisma.$disconnect());
