@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,28 +6,36 @@
 
 @layer base {
   body {
-    @apply bg-[#F8FAFC] text-slate-900 dark:bg-[#000000] dark:text-slate-100 font-sans antialiased transition-colors duration-500;
+    @apply bg-[#0f0f13] text-slate-100 font-sans antialiased transition-colors duration-500 overflow-x-hidden;
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.08), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 25%);
+    background-attachment: fixed;
   }
 
   /* Custom Scrollbar for a premium feel */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-200 dark:bg-[#333] rounded-full;
+    @apply bg-slate-800 rounded-full border-2 border-[#0f0f13];
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-300 dark:bg-[#444];
+    @apply bg-slate-700;
   }
 }
 
 @layer components {
   .glass-panel {
-    @apply bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-xl;
+    @apply bg-[#15151a]/60 backdrop-blur-xl border border-white/5 shadow-2xl;
+  }
+  
+  .glass-card {
+    @apply bg-[#1a1a24]/50 backdrop-blur-lg border border-white/10 shadow-lg rounded-2xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-indigo-500/10;
   }
   
   .card-premium {
