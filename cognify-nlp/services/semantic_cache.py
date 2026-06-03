@@ -28,8 +28,9 @@ _embedder = None
 _qdrant_client: Optional[QdrantClient] = None
 
 CACHE_COLLECTION = "cognify_semantic_cache"
-SIMILARITY_THRESHOLD = 0.95  # >95% similar = cache hit
+SIMILARITY_THRESHOLD = 0.88  # ≥88% cosine similarity = cache hit (tuned from real data)
 VECTOR_SIZE = 384             # all-MiniLM-L6-v2 output dimension
+
 CACHE_TTL_DAYS = 7
 
 
