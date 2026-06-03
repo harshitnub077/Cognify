@@ -47,7 +47,6 @@ export const DashboardLayout = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
   };
 
   // Close user menu on outside click
