@@ -78,12 +78,15 @@ async def semantic_cache_get(title: str, goals: list[str]) -> Optional[dict]:
     vector = await asyncio.to_thread(_embedder.embed_query, fingerprint)
 
     try:
-        results = _qdrant_client.search(
+        # qdrant-client ≥ 1.10 uses query_points() instead of search()
+        response = _qdrant_client.query_points(
             collection_name=CACHE_COLLECTION,
-            query_vector=vector,
+            query=vector,
             limit=1,
             score_threshold=SIMILARITY_THRESHOLD,
+            with_payload=True,
         )
+        results = response.points
     except Exception as e:
         print(f"[SemanticCache] Search error: {e}")
         return None

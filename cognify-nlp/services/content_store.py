@@ -115,7 +115,8 @@ async def get_recent_content(user_id: str, limit: int = 20) -> list[dict]:
     if _client is None:
         return []
 
-    results, _ = _client.scroll(
+    # scroll() returns (points, next_page_offset) — unpack safely
+    scroll_result = _client.scroll(
         collection_name=CONTENT_COLLECTION,
         scroll_filter=Filter(
             must=[FieldCondition(key="user_id", match=MatchValue(value=user_id))]
@@ -124,9 +125,10 @@ async def get_recent_content(user_id: str, limit: int = 20) -> list[dict]:
         with_payload=True,
         with_vectors=False,
     )
+    points = scroll_result[0] if isinstance(scroll_result, tuple) else scroll_result
 
     # Sort by analyzed_at descending (most recent first)
-    items = [r.payload for r in results if r.payload]
+    items = [r.payload for r in points if r.payload]
     items.sort(key=lambda x: x.get("analyzed_at", ""), reverse=True)
     return items[:limit]
 
@@ -141,9 +143,10 @@ async def semantic_search_content(user_id: str, query: str, limit: int = 10) -> 
 
     vector = await asyncio.to_thread(_embedder.embed_query, query)
 
-    results = _client.search(
+    # qdrant-client ≥ 1.10: use query_points() instead of search()
+    response = _client.query_points(
         collection_name=CONTENT_COLLECTION,
-        query_vector=vector,
+        query=vector,
         query_filter=Filter(
             must=[FieldCondition(key="user_id", match=MatchValue(value=user_id))]
         ),
@@ -153,6 +156,6 @@ async def semantic_search_content(user_id: str, query: str, limit: int = 10) -> 
 
     return [
         {**r.payload, "similarity_score": round(r.score, 3)}
-        for r in results
+        for r in response.points
         if r.payload
     ]
