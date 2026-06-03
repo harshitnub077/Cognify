@@ -1,49 +1,46 @@
-# Cognify 🧠
+# Cognify 🧠: Agentic Content Intelligence
 
-Cognify is an AI-powered conscious content intelligence platform designed to cure mindless scrolling. It analyzes your content diet across YouTube, Instagram, and Twitter, scoring it against your personal goals to help you align your digital habits with your ideal self.
+Cognify is an AI-powered, conscious content intelligence platform engineered to cure mindless scrolling. It operates as an **autonomous Agentic RAG system**, actively analyzing a user's digital diet (YouTube, Twitter) and providing real-time, personalized reality checks to align their content consumption with their stated life goals.
 
-## 🌟 Key Features
-- **Identity Drift Tracking**: Real-time monitoring of how far your content consumption drifts from your life goals.
-- **Socratic AI Coach**: A Claude-powered coach that never gives direct advice—only insightful, psychologically probing questions.
-- **Goal-Aligned Recommendations**: Replaces algorithm slot-machines with curated content perfectly mapped to your "Deep Thinker" or "Mindful Creator" goals.
-- **Annual Mind Report**: A Spotify-Wrapped style retrospective of your digital year with PDF export capabilities.
-- **Accountability Circles**: Private, privacy-first leaderboards to stay aligned with friends without sharing specific viewing history.
-- **Gamification**: Earn XP, unlock trophies, and maintain streaks for conscious consumption.
+## 🌟 Core Architecture & Engineering Feats
 
-## 🏗 Architecture
-Cognify is a robust microservice architecture:
-1. **Frontend**: React 18, Vite, Tailwind CSS, Zustand, React Query, Recharts.
-2. **Backend**: Node.js, Express, Prisma ORM, PostgreSQL.
-3. **NLP Engine**: Python 3.11, FastAPI, HuggingFace Transformers (Toxicity/Emotion detection).
-4. **Extension**: Chrome Manifest V3 side-panel extension injecting AI analytics directly into social platforms.
+Built for extreme performance and zero cloud compute cost, the backend architecture relies on advanced NLP techniques, local vector databases, and smart LLM routing.
 
-## 🚀 Setup Instructions
+### 1. Agentic RAG "Drift Coach"
+- **Contextual Awareness**: The agent retrieves the user’s last 20 consumed videos/articles from a vector database and maps them against the user's life goals.
+- **Harsh but Fair Coach**: Using the Groq Llama 3 model, it generates a "Drift Score" (0-100), a brutal 1-sentence reality check, and actionable algorithmic fixes.
+
+### 2. Multi-LLM Smart Router with Fallback
+- Designed a custom **Smart LLM Router** that transparently cascades requests to ensure 100% uptime with **Zero Cost**.
+- **Priority Cascade**: 
+  1. Groq API (Llama 3, lightning fast, free tier) 
+  2. Gemini 2.0 Flash (free tier fallback)
+- Features Redis-backed daily quota tracking and automatic failovers.
+
+### 3. Local Vector Embeddings & Semantic Caching
+- **HuggingFace Embeddings**: Bypassed paid OpenAI embeddings by running `sentence-transformers/all-MiniLM-L6-v2` locally within the FastAPI runtime.
+- **Qdrant Vector DB**: Utilized a local Qdrant instance to store consumed content vectors.
+- **0.95 Similarity Cache**: Engineered a semantic cache layer. Before calling the LLM to analyze a video, it embeds the title and queries Qdrant. If a >0.95 similarity match is found, it bypasses the LLM entirely, saving massive compute.
+
+### 4. Fully Async Python Backend
+- High-concurrency **FastAPI** backend utilizing `asyncio.gather` for simultaneous web-scraping, embedding generation, and LLM inferences.
+- Uses `asyncio.to_thread` for CPU-bound tasks (like local HuggingFace embeddings) to prevent event loop blocking.
+
+## 🏗 Tech Stack
+- **AI & NLP Engine**: Python 3.11, FastAPI, HuggingFace (`sentence-transformers`), Qdrant, Groq (Llama 3), Gemini.
+- **Backend Infrastructure**: Node.js, Express, Prisma ORM, PostgreSQL, Redis (Caching/Quotas).
+- **Frontend**: React 18, Vite, Tailwind CSS, Zustand.
+- **Extension**: Chrome Manifest V3 side-panel extension.
+
+## 🚀 Local Setup
 
 ### Prerequisites
 - Node.js 20+
 - Python 3.11+
-- PostgreSQL
-- Redis (for BullMQ / NLP caching)
+- Qdrant (Docker)
+- Redis
 
-### 1. Database & Backend
-```bash
-cd backend
-npm install
-cp ../.env.example .env # Fill in your DB credentials
-npx prisma db push
-npx prisma generate
-npm run dev
-```
-
-### 2. Frontend
-```bash
-cd frontend
-npm install
-cp ../.env.example .env # Fill in your Supabase and API URLs
-npm run dev
-```
-
-### 3. Python NLP Service
+### 1. Python NLP Service (Core AI Engine)
 ```bash
 cd cognify-nlp
 python -m venv venv
@@ -52,8 +49,23 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8001
 ```
 
-## 🔒 Production Security
-- Configured with `helmet.js` and `express-rate-limit`.
-- Inputs validated via `zod`.
-- Error tracking integrated via `@sentry/node` and `@sentry/react`.
-- Google Analytics 4 tracking.
+### 2. Database & Express Backend
+```bash
+cd backend
+npm install
+cp ../.env.example .env # Fill in DB credentials
+npx prisma db push
+npm run dev
+```
+
+### 3. React Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## 🔒 Security & Performance
+- **Zero-Paid APIs**: The entire NLP architecture is engineered to run free and fast using local models + free tier cloud GPUs (Groq).
+- **Concurrency Control**: Async data pipelines prevent starvation during peak load.
+- Input validated via `pydantic` and `zod`.

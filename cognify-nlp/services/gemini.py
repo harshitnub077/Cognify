@@ -11,11 +11,9 @@ import re
 import asyncio
 from services.llm_router import call_llm
 
-# ── Try to get the shared redis client; gracefully degrade if unavailable ────
-try:
-    from services.free_nlp import redis_client as _redis_client
-except ImportError:
-    _redis_client = None
+import redis.asyncio as redis
+import os
+_redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
 
 def extract_json(text: str) -> dict:

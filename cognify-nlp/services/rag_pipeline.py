@@ -14,8 +14,9 @@ from langchain_huggingface import HuggingFacePipeline
 from qdrant_client import QdrantClient
 from qdrant_client import models
 import os
-from services.gemini_router import call_llm
-from services.free_nlp import redis_client
+from services.llm_router import call_llm
+import redis.asyncio as redis
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
 # 1. Initialize Embedder
 embedder = HuggingFaceEmbeddings(
