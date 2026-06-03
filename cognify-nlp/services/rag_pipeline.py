@@ -113,13 +113,16 @@ async def rewrite_goal_queries(goal: str) -> List[str]:
 async def rag_recommend(user_goals: List[str], emotional_state: Dict[str, Any], drift_score: float, limit: int = 5) -> List[Dict[str, Any]]:
     all_docs = []
     
-    # Phase 1: Retrieve
-    for goal in user_goals:
-        queries = await rewrite_goal_queries(goal)
+    # Phase 1: Retrieve (Parallelized)
+    async def process_goal(g: str):
+        queries = await rewrite_goal_queries(g)
         tasks = [retriever.ainvoke(q) for q in queries]
         results = await asyncio.gather(*tasks)
-        for docs in results:
-            all_docs.extend(docs)
+        return [doc for docs in results for doc in docs]
+
+    goal_results = await asyncio.gather(*[process_goal(g) for g in user_goals])
+    for docs in goal_results:
+        all_docs.extend(docs)
 
     # Phase 2: Deduplicate
     seen = set()
