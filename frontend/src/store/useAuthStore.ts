@@ -34,7 +34,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
   signOut: async () => {
-    await supabase.auth.signOut();
-    set({ user: null });
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Error signing out:', e);
+    } finally {
+      set({ user: null });
+      window.location.href = '/'; // Hard redirect to clear all states and unmounts properly
+    }
   }
 }));
