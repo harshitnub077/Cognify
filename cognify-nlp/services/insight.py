@@ -1,7 +1,8 @@
 import json, os
-from services.gemini_router import call_llm
-from services.free_nlp import redis_client
+import redis.asyncio as redis
+from services.llm_router import call_llm
 
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 SYSTEM_PROMPT_INSIGHT = """
 You are Cognify's content analysis engine.
 Given content metadata and NLP scores, generate a structured insight.
@@ -68,4 +69,37 @@ async def generate_insight(content_data: dict, user_data: dict) -> dict:
             "insight": "Failed to generate AI insight.",
             "identity_impact": "Unknown",
             "urgency": "low"
+        }
+
+async def generate_insight_and_score(title: str, goals: list[str], transcript: str) -> dict:
+    prompt = f"""
+    Title: {title}
+    User Goals: {goals}
+    Transcript summary: {transcript[:1000] if transcript else 'No transcript available.'}
+    
+    Evaluate how this aligns with the user goals. Return JSON only:
+    {{
+        "score": 85,
+        "verdict": "watch",
+        "text": "1-sentence summary of insight"
+    }}
+    """
+    try:
+        response_text = await call_llm(
+            prompt=prompt,
+            system="You are an AI that strictly evaluates video alignment to goals. Return only JSON.",
+            redis_client=redis_client,
+            max_tokens=300,
+            json_mode=True
+        )
+        text = response_text.strip()
+        if text.startswith("```json"): text = text[7:-3].strip()
+        elif text.startswith("```"): text = text[3:-3].strip()
+        return json.loads(text)
+    except Exception as e:
+        print(f"Error in generate_insight_and_score: {e}")
+        return {
+            "score": 50,
+            "verdict": "caution",
+            "text": "Failed to evaluate due to LLM error."
         }

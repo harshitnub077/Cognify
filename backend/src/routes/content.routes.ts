@@ -85,11 +85,11 @@ router.post('/analyze', requireAuth, analyzeRateLimiter, async (req: AuthRequest
         return res.json({ success: true, data: existingLog });
     }
 
-    // Fetch user goals — schema uses identities[] (Phase 1 update)
+    // Fetch user goals — schema uses identities[] (from Dashboard Goals.tsx)
     const profile = await prisma.userProfile.findUnique({ where: { userId } });
-    const userGoals = (profile as any)?.focusAreas?.length > 0
-        ? (profile as any).focusAreas
-        : ['Focused Developer'];
+    const userGoals = (profile as any)?.identities?.length > 0
+        ? (profile as any).identities
+        : ((profile as any)?.focusAreas?.length > 0 ? (profile as any).focusAreas : ['Focused Developer']);
 
     // Call NLP Microservice
     let nlpResponse: any;
@@ -98,7 +98,9 @@ router.post('/analyze', requireAuth, analyzeRateLimiter, async (req: AuthRequest
             url,
             title,
             transcript: req.body.transcript,
-            user_goals: userGoals
+            description: req.body.description,
+            user_goals: userGoals,
+            user_id: userId // Pass to NLP so it saves to Qdrant Semantic DB
         }, { timeout: 15000 }); // 15s timeout to prevent hanging
         nlpResponse = response.data;
     } catch (nlpError: any) {
@@ -172,6 +174,46 @@ router.get('/history', requireAuth, async (req: AuthRequest, res) => {
         res.json({ success: true, data, total, page, limit });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Failed to fetch history' });
+    }
+});
+
+router.get('/search', requireAuth, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user.id;
+        const query = req.query.q as string;
+        
+        if (!query) {
+            return res.json({ success: true, data: [] });
+        }
+
+        // Call NLP Semantic Search
+        const response = await axios.post('http://localhost:8001/search', {
+            user_id: userId,
+            query,
+            limit: 20
+        }, { timeout: 10000 });
+
+        const nlpResults = response.data.data || [];
+
+        // Map NLP response back to the format History.tsx expects (ContentLog schema)
+        const mappedData = nlpResults.map((item: any) => ({
+            id: item.url, // Fake ID since Qdrant ID is numeric, but URL works for React key
+            url: item.url,
+            title: item.title,
+            thumbnail: item.thumbnail,
+            platform: item.platform,
+            contentType: item.platform,
+            dominantEmotion: item.dominant_emotion,
+            score: Math.round(item.alignment_score ?? 0),
+            createdAt: item.analyzed_at,
+            isConscious: item.verdict === 'watch',
+            similarityScore: item.similarity_score
+        }));
+
+        res.json({ success: true, data: mappedData });
+    } catch (error: any) {
+        console.error('Semantic Search Error:', error.message);
+        res.status(500).json({ success: false, error: 'Failed to perform semantic search' });
     }
 });
 

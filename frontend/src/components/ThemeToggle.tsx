@@ -1,15 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { IconSun, IconMoonStars } from '@tabler/icons-react';
+import { IconSun, IconMoon } from '@tabler/icons-react';
 import { useThemeStore } from '../store/useThemeStore';
 
 export const ThemeToggle = () => {
   const { theme, setTheme } = useThemeStore();
 
-  // For the toggle, we'll simplify to just light/dark to make it easy for the user
-  // If it's system, we check the actual preference
-  const isDark = 
-    theme === 'dark' || 
+  const isDark =
+    theme === 'dark' ||
     (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const toggleTheme = () => {
@@ -19,30 +17,20 @@ export const ThemeToggle = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="relative p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-[#1A1A1A] rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-[#6C4FF6] outline-none overflow-hidden"
+      className="relative flex items-center justify-center w-9 h-9 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-hover transition-colors"
       aria-label="Toggle theme"
     >
       <motion.div
-        initial={false}
-        animate={{
-          y: isDark ? 0 : 30,
-          opacity: isDark ? 1 : 0,
-        }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="absolute inset-0 flex items-center justify-center"
+        key={isDark ? 'moon' : 'sun'}
+        initial={{ opacity: 0, rotate: -30, scale: 0.8 }}
+        animate={{ opacity: 1, rotate: 0, scale: 1 }}
+        exit={{ opacity: 0, rotate: 30, scale: 0.8 }}
+        transition={{ duration: 0.2 }}
       >
-        <IconMoonStars size={22} className="text-slate-400" aria-hidden="true" />
-      </motion.div>
-      <motion.div
-        initial={false}
-        animate={{
-          y: isDark ? -30 : 0,
-          opacity: isDark ? 0 : 1,
-        }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="absolute inset-0 flex items-center justify-center"
-      >
-        <IconSun size={22} className="text-amber-500" aria-hidden="true" />
+        {isDark
+          ? <IconMoon size={18} />
+          : <IconSun size={18} className="text-amber-500" />
+        }
       </motion.div>
     </button>
   );

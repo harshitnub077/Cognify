@@ -1,55 +1,66 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
-import { useAchievements } from '../hooks/useDashboardData';
-import { 
-  IconHome, 
-  IconUserScan, 
-  IconTarget, 
-  IconHistory, 
-  IconBrain, 
-  IconUsers, 
+import { useAchievements, useUserProfile } from '../hooks/useDashboardData';
+import {
+  IconHome,
+  IconUserScan,
+  IconTarget,
+  IconHistory,
+  IconBrain,
+  IconUsers,
   IconSettings,
   IconBookmark,
   IconSearch,
-  IconFlame,
   IconBell,
   IconChevronDown,
-  IconTrophy,
   IconLogout,
+  IconX,
+  IconMenu2,
+  IconScan,
+  IconPlayerPlayFilled,
+  IconPlayerPauseFilled,
+  IconSparkles,
+  IconClock
 } from '@tabler/icons-react';
 import { Logo } from '../components/Logo';
 import { PageTransition } from '../components/PageTransition';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
+import api from '../lib/api';
 
 const NAV_LINKS = [
-  { id: 'home', label: 'Home', path: '/dashboard', icon: IconHome, exact: true },
-  { id: 'mirror', label: 'My Mirror', path: '/dashboard/mirror', icon: IconUserScan },
-  { id: 'goals', label: 'Goals', path: '/dashboard/goals', icon: IconTarget },
-  { id: 'saved', label: 'Saved', path: '/dashboard/saved', icon: IconBookmark },
-  { id: 'history', label: 'History', path: '/dashboard/history', icon: IconHistory },
-  { id: 'coach', label: 'AI Coach', path: '/dashboard/coach', icon: IconBrain, badge: 'New' },
-  { id: 'circles', label: 'Circles', path: '/dashboard/circles', icon: IconUsers },
-  { id: 'settings', label: 'Settings', path: '/dashboard/settings', icon: IconSettings },
+  { id: 'home',     label: 'Overview',   path: '/dashboard',          icon: IconHome,     exact: true },
+  { id: 'mirror',   label: 'My Mirror',  path: '/dashboard/mirror',   icon: IconUserScan  },
+  { id: 'goals',    label: 'Goals',      path: '/dashboard/goals',    icon: IconTarget    },
+  { id: 'saved',    label: 'Saved',      path: '/dashboard/saved',    icon: IconBookmark  },
+  { id: 'history',  label: 'History',    path: '/dashboard/history',  icon: IconHistory   },
+  { id: 'coach',    label: 'AI Coach',   path: '/dashboard/coach',    icon: IconBrain,    badge: 'AI' },
+  { id: 'circles',  label: 'Circles',    path: '/dashboard/circles',  icon: IconUsers     },
+  { id: 'settings', label: 'Settings',   path: '/dashboard/settings', icon: IconSettings  },
+];
+
+const MOBILE_NAV = [
+  { id: 'home',     path: '/dashboard',          icon: IconHome,    label: 'Home',    exact: true },
+  { id: 'goals',    path: '/dashboard/goals',    icon: IconTarget,  label: 'Goals'   },
+  { id: 'coach',    path: '/dashboard/coach',    icon: IconBrain,   label: 'Coach'   },
+  { id: 'circles',  path: '/dashboard/circles',  icon: IconUsers,   label: 'Circles' },
+  { id: 'settings', path: '/dashboard/settings', icon: IconSettings,label: 'Settings'},
 ];
 
 export const DashboardLayout = () => {
   const { user, signOut } = useAuthStore();
-  const navigate = useNavigate();
   const { data: achievementData } = useAchievements();
+  const { data: profile } = useUserProfile();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  
   const userMenuRef = useRef<HTMLDivElement>(null);
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Explorer';
-  const currentDate = format(new Date(), 'EEEE, MMM do');
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  // Close user menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
@@ -60,154 +71,191 @@ export const DashboardLayout = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  return (
-    <div className="flex h-screen bg-[#F8FAFC] dark:bg-[#000000] overflow-hidden text-slate-900 dark:text-white font-sans selection:bg-[#6C4FF6]/30">
-      
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex h-full w-[240px] bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-r border-slate-200/50 dark:border-[#111] z-50 flex-col">
-        <div className="h-[60px] flex items-center px-6 border-b border-slate-200 dark:border-[#222]">
-          <div className="flex items-center gap-2 font-bold text-xl text-[#6C4FF6]">
-            <Logo className="w-6 h-6" aria-hidden="true" /> Cognify
-          </div>
+  const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
+    <aside className={cn(
+      'flex flex-col h-full bg-white dark:bg-black',
+      mobile
+        ? 'w-full'
+        : 'w-[232px] border-r border-slate-200 dark:border-surface-border'
+    )}>
+      {/* Logo */}
+      <div className={cn('flex items-center gap-2.5 px-5 h-[60px] border-b border-slate-200 dark:border-surface-border shrink-0', mobile && 'justify-between')}>
+        <div className="flex items-center gap-2.5">
+          <Logo className="w-7 h-7" />
+          <span className="font-display font-bold text-lg tracking-tight">Cognify</span>
         </div>
+        {mobile && (
+          <button onClick={() => setMobileOpen(false)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-surface-hover">
+            <IconX size={20} />
+          </button>
+        )}
+      </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1" aria-label="Main navigation">
-          {NAV_LINKS.map(link => (
-            <NavLink 
-              key={link.id} 
-              to={link.path}
-              end={link.exact}
-              className={({ isActive }) => cn(
-                "relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-sm focus-visible:ring-2 focus-visible:ring-[#6C4FF6] outline-none group z-10",
-                isActive 
-                  ? "text-white" 
-                  : "text-slate-600 dark:text-[#A7A9BE] hover:text-slate-900 dark:hover:text-white"
-              )}
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <motion.div
-                      layoutId="sidebar-active-pill"
-                      className="absolute inset-0 bg-[#6C4FF6] rounded-lg -z-10 shadow-[0_0_15px_rgba(108,79,246,0.3)]"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                  <div className={cn("transition-colors", isActive ? "text-white" : "group-hover:text-[#6C4FF6]")}>
-                    <link.icon size={20} aria-hidden="true" />
-                  </div>
-                  <span className="relative z-10">{link.label}</span>
-                  {link.badge && (
-                    <span className={cn(
-                      "ml-auto text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full relative z-10",
-                      isActive ? "bg-white/20 text-white" : "bg-[#6C4FF6] text-white"
-                    )}>
-                      {link.badge}
-                    </span>
-                  )}
-                </>
-              )}
-            </NavLink>
-          ))}
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+        {NAV_LINKS.map(link => (
+          <NavLink
+            key={link.id}
+            to={link.path}
+            end={link.exact}
+            onClick={() => mobile && setMobileOpen(false)}
+            className={({ isActive }) => cn(
+              'relative flex items-center gap-3 px-4 h-10 rounded-lg text-sm font-medium transition-all duration-200 group outline-none w-full',
+              isActive
+                ? 'text-primary bg-surface-hover'
+                : 'text-surface-muted hover:text-primary hover:bg-surface-hover/50'
+            )}
+          >
+            {({ isActive }) => (
+              <>
+                <link.icon size={18} aria-hidden="true" />
+                <span className="flex-1">{link.label}</span>
+                {link.badge && (
+                  <span className={cn(
+                    'h-5 px-1.5 inline-flex items-center justify-center text-[10px] font-bold rounded border',
+                    isActive
+                      ? 'border-surface-border text-primary'
+                      : 'border-transparent text-surface-muted'
+                  )}>
+                    {link.badge}
+                  </span>
+                )}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
 
-          {achievementData && (
-            <div className="mt-4 px-4 py-3 bg-[#6C4FF6]/5 border border-[#6C4FF6]/10 rounded-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-[#6C4FF6] flex items-center gap-1">
-                  <IconTrophy size={14} aria-hidden="true" /> Level {achievementData.level || 1}
-                </span>
-                <span className="text-[10px] font-bold text-slate-400">{achievementData.totalXP || 0} XP</span>
-              </div>
-              <div className="w-full h-1.5 bg-slate-200 dark:bg-[#222] rounded-full overflow-hidden" role="progressbar" aria-label="Level progress">
-                <div className="h-full bg-[#6C4FF6] rounded-full" style={{ width: `${((achievementData.totalXP || 0) % 100)}%` }} />
-              </div>
-            </div>
-          )}
-        </nav>
-
-        <div className="p-4 border-t border-slate-200 dark:border-[#222]">
-          <div className="bg-gradient-to-br from-[#6C4FF6]/20 to-purple-500/10 border border-[#6C4FF6]/30 rounded-xl p-4 text-center">
-            <h4 className="text-sm font-bold text-[#6C4FF6] mb-1">Unlock full Mirror</h4>
-            <p className="text-xs text-slate-600 dark:text-[#A7A9BE] mb-3">Pro from ₹299/mo</p>
-            <button 
-              className="w-full py-1.5 bg-[#6C4FF6] text-white text-xs font-bold rounded-lg hover:bg-[#5B40DB] transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#6C4FF6] outline-none"
-              aria-label="Upgrade to Pro"
-            >
-              Upgrade
-            </button>
+      {/* XP / Level */}
+      {achievementData && (
+        <div className="px-5 pb-3">
+          <div className="flex justify-between items-center mb-1.5 text-xs font-medium">
+            <span className="text-slate-500 dark:text-surface-muted">Level {achievementData.level || 1}</span>
+            <span className="text-primary font-bold">{achievementData.totalXP || 0} XP</span>
           </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        
-        {/* Top Bar */}
-        <header className="h-[60px] flex items-center justify-between px-4 lg:px-8 border-b border-slate-200/50 dark:border-[#111] bg-white/60 dark:bg-[#000000]/60 backdrop-blur-2xl z-30 sticky top-0">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 font-bold text-lg text-[#6C4FF6] lg:hidden" aria-label="Cognify">
-              <Logo className="w-5 h-5" aria-hidden="true" /> Cognify
-            </div>
-            <div className="hidden lg:block">
-              <h2 className="text-sm font-semibold">Good morning, {firstName}</h2>
-              <p className="text-xs text-slate-500 dark:text-[#A7A9BE]">{currentDate}</p>
-            </div>
-          </div>
-
-          <div className="flex-1 max-w-md mx-4 lg:mx-8 hidden sm:block relative">
-            <IconSearch size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-            <input 
-              type="search" 
-              placeholder="Search your content history..." 
-              aria-label="Search content history"
-              className="w-full bg-slate-100 dark:bg-[#1A1A1A] border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-[#6C4FF6] outline-none text-slate-900 dark:text-white"
+          <div className="w-full h-1 bg-slate-100 dark:bg-surface-hover rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-700"
+              style={{ width: `${((achievementData.totalXP || 0) % 100)}%` }}
             />
           </div>
+        </div>
+      )}
 
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-
-            <button 
-              className="relative p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-[#1A1A1A] rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-[#6C4FF6] outline-none"
-              aria-label="Notifications — 1 unread"
-            >
-              <IconBell size={22} aria-hidden="true" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
-            </button>
-
-            {/* User Avatar / Dropdown */}
-            <div className="relative" ref={userMenuRef}>
-              <button 
-                onClick={() => setShowUserMenu(v => !v)}
-                className="flex items-center gap-2 ml-2 cursor-pointer border-l pl-4 border-slate-200 dark:border-[#222] focus-visible:ring-2 focus-visible:ring-[#6C4FF6] outline-none rounded"
-                aria-label="User menu"
-                aria-expanded={showUserMenu}
-              >
-                <div className="w-8 h-8 rounded-full bg-[#6C4FF6] text-white flex items-center justify-center font-bold text-sm uppercase">
-                  {firstName.charAt(0)}
-                </div>
-                <IconChevronDown size={16} className="text-slate-500 hidden sm:block" aria-hidden="true" />
-              </button>
-              {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333] rounded-xl shadow-xl py-2 z-50">
-                  <div className="px-4 py-2 border-b border-slate-100 dark:border-[#333]">
-                    <p className="text-xs font-bold truncate">{firstName}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
-                  </div>
-                  <button 
-                    onClick={handleSignOut}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
-                  >
-                    <IconLogout size={16} aria-hidden="true" /> Sign out
-                  </button>
-                </div>
-              )}
+      {/* User */}
+      <div className="p-3 border-t border-slate-200 dark:border-surface-border shrink-0">
+        <div ref={mobile ? undefined : userMenuRef} className="relative mt-2">
+          <button
+            onClick={() => setShowUserMenu(v => !v)}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-surface-hover transition-colors"
+          >
+            <div className="w-6 h-6 rounded-md bg-primary text-primary-fg flex items-center justify-center font-bold text-xs shrink-0 uppercase">
+              {firstName.charAt(0)}
             </div>
+            <div className="flex-1 text-left min-w-0">
+              <div className="text-xs font-semibold truncate">{firstName}</div>
+              <div className="text-[10px] text-surface-muted truncate">{user?.email}</div>
+            </div>
+            <IconChevronDown size={14} className="text-surface-muted shrink-0" />
+          </button>
+
+          <AnimatePresence>
+            {showUserMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                transition={{ duration: 0.15 }}
+                className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-surface-card border border-slate-200 dark:border-surface-border rounded-xl shadow-xl py-1.5 z-50"
+              >
+                <button
+                  onClick={() => signOut()}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  <IconLogout size={15} />
+                  Sign out
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </aside>
+  );
+
+  return (
+    <div className="flex h-screen bg-slate-50 dark:bg-[#080808] text-slate-900 dark:text-white font-sans overflow-hidden">
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex h-full shrink-0">
+        <Sidebar />
+      </div>
+
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.div
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="lg:hidden fixed left-0 top-0 bottom-0 w-[280px] z-50 shadow-2xl"
+            >
+              <Sidebar mobile />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+
+        {/* Top bar */}
+        <header className="h-[60px] flex items-center gap-4 px-4 lg:px-6 border-b border-slate-200 dark:border-surface-border bg-white dark:bg-black shrink-0 z-30">
+          {/* Hamburger */}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-surface-hover transition-colors"
+          >
+            <IconMenu2 size={20} />
+          </button>
+
+          {/* Typographic Center */}
+          <div className="flex-1 flex items-center justify-center mx-auto lg:ml-6 hidden sm:flex">
+            <div className="flex items-center gap-3 select-none opacity-80">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></span>
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-slate-500 dark:text-surface-muted font-bold">
+                Neural Sync Active
+              </span>
+            </div>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              className="relative flex items-center justify-center w-10 h-10 rounded-lg text-surface-muted hover:text-primary hover:bg-surface-hover transition-colors"
+              aria-label="Notifications"
+            >
+              <IconBell size={20} />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-surface" />
+            </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 lg:pb-8">
-          <div className="max-w-[1200px] mx-auto w-full">
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-[1200px] mx-auto w-full p-4 md:p-8 pb-24 lg:pb-8">
             <PageTransition>
               <Outlet />
             </PageTransition>
@@ -215,27 +263,26 @@ export const DashboardLayout = () => {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-[65px] bg-white/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl border-t border-slate-200 dark:border-[#222] z-50 flex items-center justify-around px-2 pb-safe" aria-label="Mobile navigation">
-        {[
-          { id: 'home', path: '/dashboard', icon: IconHome, label: 'Home', exact: true },
-          { id: 'goals', path: '/dashboard/goals', icon: IconTarget, label: 'Goals' },
-          { id: 'coach', path: '/dashboard/coach', icon: IconBrain, label: 'Coach' },
-          { id: 'circles', path: '/dashboard/circles', icon: IconUsers, label: 'Circles' },
-          { id: 'settings', path: '/dashboard/settings', icon: IconSettings, label: 'Settings' }
-        ].map(link => (
+      {/* Mobile bottom nav */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-black border-t border-slate-200 dark:border-surface-border z-50 flex items-center justify-around px-2">
+        {MOBILE_NAV.map(link => (
           <NavLink
             key={link.id}
             to={link.path}
             end={link.exact}
-            aria-label={link.label}
             className={({ isActive }) => cn(
-              "flex flex-col items-center justify-center min-w-[44px] min-h-[44px] p-2 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-[#6C4FF6] outline-none gap-0.5",
-              isActive ? "text-[#6C4FF6]" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              'flex flex-col items-center justify-center gap-1 min-w-[56px] py-2 px-3 rounded-xl transition-colors',
+              isActive
+                ? 'text-slate-900 dark:text-white'
+                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
             )}
           >
-            <link.icon size={22} stroke={1.5} aria-hidden="true" />
-            <span className="text-[9px] font-medium">{link.label}</span>
+            {({ isActive }) => (
+              <>
+                <link.icon size={20} stroke={isActive ? 2 : 1.5} />
+                <span className="text-[10px] font-medium">{link.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>

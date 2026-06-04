@@ -2,55 +2,33 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 export const Logo = ({ className = '' }: { className?: string }) => (
-  <motion.svg 
-    viewBox="0 0 100 100" 
-    className={`w-10 h-10 ${className}`}
-    fill="none" 
+  <motion.svg
+    viewBox="0 0 40 40"
+    className={`w-6 h-6 ${className}`}
+    fill="none"
     xmlns="http://www.w3.org/2000/svg"
     initial="hidden"
     animate="visible"
-    whileHover="hover"
   >
-    <defs>
-      <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#7C3AED" />
-        <stop offset="100%" stopColor="#38BDF8" />
-      </linearGradient>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-
-    <motion.path 
-      d="M30 50 C 30 25, 70 25, 70 50 C 70 75, 30 75, 30 50 Z" 
-      stroke="url(#logo-gradient)" 
-      strokeWidth="6" 
-      strokeLinecap="round" 
-      filter="url(#glow)"
+    <motion.rect
+      x="4" y="4" width="32" height="32" rx="6"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      className="text-primary"
       variants={{
-        hidden: { pathLength: 0, opacity: 0 },
-        visible: { 
-          pathLength: 1, 
-          opacity: 1,
-          transition: { duration: 2, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }
-        },
-        hover: { scale: 1.1, rotate: 90, transition: { duration: 0.5 } }
+        hidden: { opacity: 0, scale: 0.9 },
+        visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } }
       }}
     />
-    
-    <motion.circle 
-      cx="50" cy="50" r="8" 
-      fill="#38BDF8" 
+    <motion.path
+      d="M24 16L16 24M16 16L24 24"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="square"
+      className="text-primary"
       variants={{
-        hidden: { scale: 0 },
-        visible: { 
-          scale: [1, 1.3, 1],
-          transition: { duration: 2, repeat: Infinity }
-        }
+        hidden: { pathLength: 0 },
+        visible: { pathLength: 1, transition: { duration: 0.5, delay: 0.1 } },
       }}
     />
   </motion.svg>

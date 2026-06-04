@@ -11,6 +11,7 @@ class AnalyzeRequest(BaseModel):
     url: str
     title: Optional[str] = None
     transcript: Optional[str] = None
+    description: Optional[str] = None
     user_goals: list[str] = []
     user_id: Optional[str] = None  # when present, stores result in content store
 

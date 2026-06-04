@@ -23,10 +23,15 @@ embedder = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
 
-# 2. Connect to Local Qdrant
-qdrant_path = os.path.join(os.path.dirname(__file__), "..", "qdrant_db")
-os.makedirs(qdrant_path, exist_ok=True)
-client = QdrantClient(path=qdrant_path)
+# 2. Connect to Qdrant (Local Path or Docker URL)
+qdrant_url = os.getenv("QDRANT_URL")
+if qdrant_url:
+    client = QdrantClient(url=qdrant_url)
+else:
+    qdrant_path = os.path.join(os.path.dirname(__file__), "..", "qdrant_db")
+    os.makedirs(qdrant_path, exist_ok=True)
+    client = QdrantClient(path=qdrant_path)
+
 COLLECTION_NAME = "cognify_content"
 
 try:

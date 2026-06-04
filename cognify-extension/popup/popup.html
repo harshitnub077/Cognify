@@ -2,34 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cognify</title>
+  <title>Cognify Extension</title>
   <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="popup-container">
-    <!-- Logo -->
-    <div class="logo-row">
-      <div class="logo-circle">C</div>
-      <span class="logo-text">Cognify</span>
+  <div class="header">
+    <div class="brand">
+      <div class="logo"></div>
+      <h1>Cognify</h1>
     </div>
-
-    <!-- Status -->
-    <div class="status-row">
-      <span class="status-dot"></span>
-      <span class="status-label">Extension active</span>
-    </div>
-
-    <!-- Last analyzed -->
-    <div class="last-analyzed">
-      <div class="last-label">Last analyzed</div>
-      <div class="last-title" id="last-title">No videos analyzed yet</div>
-      <div class="last-meta" id="last-meta"></div>
-    </div>
-
-    <!-- Dashboard button -->
-    <button id="dashboard-btn" class="dashboard-btn">Open Dashboard ↗</button>
+    <div id="status-dot" class="status-dot"></div>
   </div>
+
+  <div class="main-content" id="login-view">
+    <p class="subtitle">Please login to the web dashboard first.</p>
+    <button id="login-btn" class="btn">Open Dashboard</button>
+  </div>
+
+  <div class="main-content hidden" id="active-view">
+    <div class="stat-row">
+      <div class="stat-card">
+        <span class="stat-label">Conscious</span>
+        <span class="stat-value" id="conscious-count">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Avg Match</span>
+        <span class="stat-value" id="avg-match">0%</span>
+      </div>
+    </div>
+    
+    <div class="current-site">
+      <div class="site-header">
+        <span class="site-title">Current Target</span>
+      </div>
+      <p class="site-name" id="site-name">Inactive</p>
+      <p class="site-desc" id="site-desc">Navigate to YouTube or Instagram</p>
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

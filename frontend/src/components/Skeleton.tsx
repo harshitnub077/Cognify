@@ -1,18 +1,15 @@
 import React from 'react';
 import { cn } from '../lib/utils';
 
-interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+interface SkeletonProps {
   className?: string;
 }
 
-export function Skeleton({ className, ...props }: SkeletonProps) {
-  return (
-    <div
-      className={cn(
-        "animate-pulse rounded-md bg-slate-200/60 dark:bg-slate-800/60",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+export const Skeleton = ({ className }: SkeletonProps) => (
+  <div
+    className={cn(
+      'animate-pulse bg-slate-100 dark:bg-surface-hover rounded-xl',
+      className
+    )}
+  />
+);

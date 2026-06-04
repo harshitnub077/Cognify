@@ -1,29 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import {
-  IconTarget, IconBrain, IconLeaf, IconHeart, IconCode, IconBook,
-  IconEdit, IconRefresh, IconCheck, IconX, IconSparkles
-} from '@tabler/icons-react';
+import { IconTarget, IconEdit, IconRefresh, IconCheck, IconX, IconSparkles } from '@tabler/icons-react';
 import { RecommendationCard } from '../../components/RecommendationCard';
 import { Skeleton } from '../../components/Skeleton';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { useRecommendations, useUserProfile } from '../../hooks/useDashboardData';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30, filter: 'blur(10px)' },
-  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
 
 const Goals = () => {
   const { data: profile, isLoading } = useUserProfile();
@@ -32,7 +16,6 @@ const Goals = () => {
   const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
 
-  // If there are identities from before, join them or take the first as the overarching goal
   const currentGoal: string = profile?.identities?.length > 0
     ? profile.identities.join(' ')
     : "I want to improve my focus and learn new things.";
@@ -47,7 +30,7 @@ const Goals = () => {
     setSaving(true);
     try {
       await api.post('/user/onboarding', {
-        identities: [goalText.trim()], // send as single string in array
+        identities: [goalText.trim()],
         reduceGoals: profile?.reduceGoals || [],
         platforms: profile?.platforms || []
       });
@@ -63,108 +46,102 @@ const Goals = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-6xl mx-auto">
-        <Skeleton className="h-[200px] rounded-3xl bg-white/5" />
-        <Skeleton className="h-[400px] rounded-3xl bg-white/5" />
+      <div className="space-y-6 max-w-5xl mx-auto">
+        <Skeleton className="h-[200px]" />
+        <Skeleton className="h-[400px]" />
       </div>
     );
   }
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="space-y-8 pb-20 max-w-6xl mx-auto"
-    >
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <motion.div variants={itemVariants}>
-          <h1 className="font-display text-4xl font-bold tracking-tight mb-2">My <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Focus</span></h1>
-          <p className="text-slate-400">Tell the AI what you're working on right now.</p>
-        </motion.div>
+    <div className="space-y-8 pb-24 w-full max-w-[1600px] mx-auto px-4 md:px-6">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-white mb-1">Active Directive</h1>
+          <p className="text-sm text-slate-500 max-w-2xl">
+            Your core cognitive objective. The AI filters your feed to align strictly with this directive.
+          </p>
+        </div>
         
-        <motion.div variants={itemVariants}>
+        <div>
           {!editing ? (
-            <button
-              onClick={handleEditStart}
-              className="glass-card hover:bg-white/10 px-6 py-3 rounded-full text-sm font-bold transition flex items-center gap-2 group shadow-lg"
-            >
-              <IconEdit size={16} className="group-hover:text-primary transition-colors" /> Edit Focus
+            <button onClick={handleEditStart} className="btn-secondary flex items-center gap-2">
+              <IconEdit size={16} /> Edit Directive
             </button>
           ) : (
-            <div className="flex gap-3">
-              <button
-                onClick={() => setEditing(false)}
-                className="glass-card hover:bg-white/5 px-6 py-3 rounded-full text-sm font-bold transition flex items-center gap-2"
-              >
-                <IconX size={16} /> Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="btn-primary px-6 py-3 rounded-full text-sm font-bold transition disabled:opacity-60 flex items-center gap-2 shadow-[0_0_20px_rgba(124,58,237,0.3)] hover:scale-105 active:scale-95"
-              >
+            <div className="flex gap-2">
+              <button onClick={() => setEditing(false)} className="btn-ghost">Cancel</button>
+              <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2">
                 {saving ? <IconRefresh size={16} className="animate-spin" /> : <IconCheck size={16} />} 
-                {saving ? 'Saving…' : 'Save Focus'}
+                Initialize
               </button>
             </div>
           )}
-        </motion.div>
+        </div>
       </header>
 
-      {/* Edit Mode / View Mode Transition */}
       <AnimatePresence mode="wait">
         {editing ? (
           <motion.div
             key="edit"
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="glass-panel p-8 rounded-3xl mb-8 relative overflow-hidden group shadow-[0_0_50px_rgba(124,58,237,0.15)]"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="card p-10 lg:p-16 bg-[#0a0a0a] border border-[#222]"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/5 opacity-50" />
-            <div className="relative z-10">
-              <div className="mb-6 flex flex-col gap-2">
-                <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2">
-                  <IconSparkles size={20} className="animate-pulse" /> AI Prompt Instruction
-                </h3>
-                <p className="text-slate-400 text-sm">Write anything. E.g. "I am a 3rd year CSE student preparing for the GATE exam and I want to master Data Structures."</p>
-              </div>
-              
-              <textarea
-                value={goalText}
-                onChange={(e) => setGoalText(e.target.value)}
-                placeholder="Describe your current life goals, exams, or skills you want to learn..."
-                className="w-full h-40 bg-black/40 border border-white/10 rounded-2xl p-6 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 text-base resize-none shadow-inner text-white placeholder-slate-600 transition-all"
-              />
+            <div className="mb-6">
+              <h3 className="text-xs font-medium flex items-center gap-2 text-white mb-2">
+                <IconSparkles size={16} /> Reprogram Directive
+              </h3>
+              <p className="text-sm font-medium text-slate-500">Describe your current goals, upcoming exams, or exactly what you want to master.</p>
             </div>
+            
+            <textarea
+              value={goalText}
+              onChange={(e) => setGoalText(e.target.value)}
+              placeholder="E.g. 'I am mastering advanced machine learning concepts for my upcoming interviews...'"
+              className="w-full h-48 bg-[#111] border border-[#222] hover:border-[#333] focus:border-white focus:ring-0 rounded-md p-6 text-lg font-medium resize-none transition-colors text-white placeholder:text-slate-600 focus:outline-none"
+            />
           </motion.div>
         ) : (
           <motion.div
             key="view"
-            variants={itemVariants}
-            className="glass-panel rounded-3xl p-8 relative overflow-hidden shadow-lg group"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
           >
-            <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-[80px] group-hover:bg-primary/30 transition-colors duration-1000"></div>
-            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-accent/20 rounded-full blur-[80px] group-hover:bg-accent/30 transition-colors duration-1000"></div>
-            
-            <div className="relative z-10 flex flex-col items-center text-center py-6">
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <IconTarget size={16} /> Current Neural Prompt
-              </h3>
-              <p className="font-display text-2xl md:text-3xl font-medium leading-relaxed max-w-4xl text-white">
-                "{currentGoal}"
-              </p>
+            <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-8 lg:p-12 relative overflow-hidden text-white">
+              <div className="relative z-10 max-w-4xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[#111] border border-[#222] text-xs font-medium text-slate-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white mr-2" /> Active
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[#111] border border-[#222] text-xs font-medium text-slate-300">
+                    Neural Sync
+                  </span>
+                </div>
+                
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.2] text-white tracking-tight mb-8">
+                  "{currentGoal.charAt(0).toUpperCase() + currentGoal.slice(1)}"
+                </h2>
+                
+                <div className="flex items-center gap-4 text-xs font-medium text-slate-500 border-t border-[#1a1a1a] pt-6">
+                  <div className="flex items-center gap-2">
+                    <IconSparkles size={14} className="text-slate-400" /> Web Curating
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <IconCheck size={14} className="text-slate-400" /> Distractions Blocked
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Recommendations */}
-      <motion.div variants={itemVariants} className="space-y-10 mt-8">
+      <div className="pt-8 border-t border-surface-border">
         <WrappedGoalStrip goal={currentGoal} />
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
@@ -172,33 +149,29 @@ const GoalStrip = ({ goal }: { goal: string }) => {
   const { data: recommendations, isLoading, refetch } = useRecommendations(goal, 12);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="font-display text-2xl font-bold flex items-center gap-3">
-          <IconSparkles className="text-accent animate-pulse" size={28} />
-          AI Curated Feed
-        </h3>
+    <div className="space-y-8 mt-4">
+      <div className="flex items-end justify-between pb-4">
+        <div>
+          <h2 className="text-lg font-medium text-white mb-1">Curated Content</h2>
+        </div>
         <button 
           onClick={() => refetch()} 
-          className="text-xs font-bold text-slate-400 hover:text-white glass-card px-4 py-2 rounded-full flex items-center gap-2 transition hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+          className="text-xs font-medium text-slate-400 hover:text-white flex items-center gap-2 transition-colors border border-[#222] px-3 py-1.5 rounded-md hover:bg-[#111]"
         >
-          <IconRefresh size={14} /> Refresh Matrix
+          <IconRefresh size={14} /> Refresh
         </button>
       </div>
+      
       {isLoading ? (
-        <div className="flex gap-6 overflow-x-hidden pt-4 pb-8">
-          {[1,2,3,4].map(i => <Skeleton key={i} className="w-[300px] h-[360px] rounded-3xl shrink-0 bg-white/5" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="w-full h-[320px]" />)}
         </div>
       ) : (
-        <div className="flex gap-6 overflow-x-auto pt-4 pb-8 custom-scrollbar snap-x snap-mandatory">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {recommendations?.map((item: any) => (
-            <motion.div 
-              key={item.id} 
-              className="snap-start shrink-0"
-              whileHover={{ y: -10 }}
-            >
+            <div key={item.id} className="w-full flex justify-center">
               <RecommendationCard item={item} />
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
@@ -207,7 +180,7 @@ const GoalStrip = ({ goal }: { goal: string }) => {
 };
 
 const WrappedGoalStrip = ({ goal }: { goal: string }) => (
-  <ErrorBoundary fallbackMessage={`Failed to load curated feed.`}>
+  <ErrorBoundary fallbackMessage="Failed to load curated feed.">
     <GoalStrip goal={goal} />
   </ErrorBoundary>
 );

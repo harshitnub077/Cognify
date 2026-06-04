@@ -10,6 +10,7 @@ export const useDashboardStats = () => {
       return res.data;
     },
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 10000,
   });
 };
 
@@ -21,6 +22,7 @@ export const useEmotionTimeline = () => {
       return res.data.data;
     },
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 10000,
   });
 };
 
@@ -32,6 +34,7 @@ export const useDriftScore = () => {
       return res.data;
     },
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 10000,
   });
 };
 
@@ -43,6 +46,20 @@ export const useContentHistory = (params?: { page?: number, limit?: number }) =>
       return res.data;
     },
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 5000, // Seamless polling for extension updates
+  });
+};
+
+export const useSemanticSearch = (query: string) => {
+  return useQuery({
+    queryKey: ['semantic-search', query],
+    queryFn: async () => {
+      if (!query) return [];
+      const res = await api.get('/content/search', { params: { q: query } });
+      return res.data.data;
+    },
+    enabled: !!query, // Only run if query is not empty
+    staleTime: 60 * 1000,
   });
 };
 

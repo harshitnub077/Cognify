@@ -35,3 +35,7 @@ huggingface-hub==0.23.4
 # ── YouTube ───────────────────────────────────────────────────────────────────
 yt-dlp==2024.5.27              # transcript + metadata fetching (free)
 youtube-transcript-api>=0.6.2  # faster transcript fetching
+
+# ── Evaluation ────────────────────────────────────────────────────────────────
+ragas==0.1.9
+datasets==2.20.0

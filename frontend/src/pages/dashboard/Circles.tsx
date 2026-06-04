@@ -1,8 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useCircles } from '../../hooks/useDashboardData';
 import { IconUsers, IconPlus, IconUserPlus, IconTrophy, IconFlame, IconLoader2, IconCopy, IconCheck } from '@tabler/icons-react';
 import { Skeleton } from '../../components/Skeleton';
-import { motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
@@ -21,7 +20,7 @@ const Circles = () => {
     try {
       if (activeTab === 'create') {
         const res = await api.post('/circles/create', { name: inputValue.trim() });
-        toast.success(`Circle "${res.data.data.name}" created! Code: ${res.data.data.inviteCode}`);
+        toast.success(`Circle created! Code: ${res.data.data.inviteCode}`);
       } else {
         await api.post('/circles/join', { inviteCode: inputValue.trim().toUpperCase() });
         toast.success('Joined circle!');
@@ -30,34 +29,30 @@ const Circles = () => {
       setInputValue('');
       setActiveTab('my-circles');
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || 'Failed. Check the invite code.');
+      toast.error(err?.response?.data?.error || 'Failed.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-20 w-full max-w-[1600px] mx-auto px-4 md:px-6 mt-4">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2"><IconUsers className="text-[#6C4FF6]" /> Accountability Circles</h1>
-        <p className="text-slate-500 text-sm mt-1 max-w-xl">
-          Growth happens together. Join a private circle to track collective alignment and hold each other accountable.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-white mb-1">Circles</h1>
+        <p className="text-sm text-slate-500">Accountability groups to track collective alignment.</p>
       </header>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 bg-[#0a0a0a] border border-[#1a1a1a] p-1 rounded-md w-max">
         {(['my-circles', 'join', 'create'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => { setActiveTab(tab); setInputValue(''); }}
-            className={`px-4 py-2 rounded-full text-sm font-bold transition flex items-center gap-1 ${
+            className={`px-4 py-1.5 rounded text-xs font-medium transition-colors ${
               activeTab === tab
-                ? 'bg-[#121212] dark:bg-white text-white dark:text-black'
-                : 'bg-slate-100 dark:bg-[#1A1A1A] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                ? 'bg-white text-black'
+                : 'text-slate-400 hover:text-white hover:bg-[#111]'
             }`}
           >
-            {tab === 'join' && <IconUserPlus size={16} />}
-            {tab === 'create' && <IconPlus size={16} />}
             {tab === 'my-circles' ? 'My Circles' : tab === 'join' ? 'Join' : 'Create'}
           </button>
         ))}
@@ -66,25 +61,20 @@ const Circles = () => {
       {activeTab === 'my-circles' && (
         <div className="space-y-6">
           {isLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {[1, 2].map(i => <Skeleton key={i} className="h-64 rounded-2xl" />)}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {[1, 2].map(i => <Skeleton key={i} className="h-48 rounded-lg bg-[#0a0a0a] border border-[#1a1a1a]" />)}
             </div>
           ) : !circles || circles.length === 0 ? (
-            <div className="border border-dashed border-slate-300 dark:border-[#333] rounded-2xl p-12 text-center">
-              <div className="w-16 h-16 bg-[#6C4FF6]/10 text-[#6C4FF6] rounded-full flex items-center justify-center mx-auto mb-4">
-                <IconUsers size={32} />
-              </div>
-              <h3 className="text-lg font-bold mb-2">No active circles</h3>
-              <p className="text-slate-500 max-w-sm mx-auto mb-6">
-                Create a circle to invite friends, or join one using an invite code.
-              </p>
+            <div className="border border-dashed border-[#222] bg-[#050505] rounded-lg p-12 text-center text-slate-500">
+              <IconUsers size={32} className="mx-auto mb-3 text-[#333]" />
+              <p className="text-sm font-medium mb-4">No active circles</p>
               <div className="flex gap-2 justify-center">
-                <button onClick={() => setActiveTab('join')} className="px-4 py-2 text-sm font-bold border border-slate-200 dark:border-[#333] rounded-xl hover:border-[#6C4FF6] transition">Join</button>
-                <button onClick={() => setActiveTab('create')} className="px-4 py-2 text-sm font-bold bg-[#6C4FF6] text-white rounded-xl hover:bg-[#5b3fd4] transition">Create</button>
+                <button onClick={() => setActiveTab('join')} className="px-4 py-1.5 rounded bg-[#111] border border-[#222] text-xs font-medium text-slate-300 hover:text-white hover:bg-[#222]">Join</button>
+                <button onClick={() => setActiveTab('create')} className="px-4 py-1.5 rounded bg-white text-black text-xs font-medium hover:bg-slate-200">Create</button>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {circles.map((circle: any) => (
                 <CircleCard key={circle.id} circle={circle} />
               ))}
@@ -94,44 +84,26 @@ const Circles = () => {
       )}
 
       {(activeTab === 'join' || activeTab === 'create') && (
-        <motion.form
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          onSubmit={handleSubmit}
-          className="max-w-md bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#222] rounded-2xl p-6 shadow-sm"
-        >
-          <h3 className="text-lg font-bold mb-2">
-            {activeTab === 'join' ? 'Join a Circle' : 'Create a Circle'}
-          </h3>
-          <p className="text-sm text-slate-500 mb-5">
-            {activeTab === 'join'
-              ? 'Enter the 6-character invite code provided by your circle leader.'
-              : 'Give your circle a name. You will receive an invite code to share.'}
+        <form onSubmit={handleSubmit} className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-6 max-w-md">
+          <h3 className="text-sm font-medium text-white mb-2">{activeTab === 'join' ? 'Join a Circle' : 'Create a Circle'}</h3>
+          <p className="text-xs text-slate-500 mb-6">
+            {activeTab === 'join' ? 'Enter the 6-character invite code.' : 'Give your circle a name.'}
           </p>
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase">
-                {activeTab === 'join' ? 'Invite Code' : 'Circle Name'}
-              </label>
-              <input
-                type="text"
-                value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                placeholder={activeTab === 'join' ? 'e.g. X7B9K2' : 'e.g. The Thinkers'}
-                required
-                className="w-full bg-slate-100 dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#6C4FF6]/50 transition"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#6C4FF6] text-white font-bold rounded-xl px-4 py-3 text-sm hover:bg-[#5b3ce0] transition shadow-md shadow-[#6C4FF6]/20 flex items-center justify-center gap-2 disabled:opacity-70"
-            >
-              {loading && <IconLoader2 size={16} className="animate-spin" />}
+            <input
+              type="text"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              placeholder={activeTab === 'join' ? 'e.g. X7B9K2' : 'e.g. The Thinkers'}
+              required
+              className="w-full bg-[#111] border border-[#222] text-sm text-white placeholder-slate-600 px-3 py-2 rounded-md focus:outline-none focus:border-[#444] transition-colors"
+            />
+            <button type="submit" disabled={loading} className="w-full px-4 py-2 rounded bg-white text-black text-xs font-medium hover:bg-slate-200 flex justify-center items-center gap-2">
+              {loading && <IconLoader2 size={14} className="animate-spin" />}
               {activeTab === 'join' ? 'Join Circle' : 'Create Circle'}
             </button>
           </div>
-        </motion.form>
+        </form>
       )}
     </div>
   );
@@ -147,44 +119,32 @@ const CircleCard = ({ circle }: { circle: any }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-[#121212] border border-slate-200 dark:border-[#222] rounded-2xl p-6 shadow-sm relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-[#6C4FF6]/5 rounded-bl-[100px] -z-10" />
+    <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-5">
       <div className="flex justify-between items-start mb-5">
         <div>
-          <h3 className="text-xl font-bold">{circle.name}</h3>
-          <button
-            onClick={copyCode}
-            className="mt-1 flex items-center gap-1 text-xs font-mono bg-slate-100 dark:bg-[#1A1A1A] hover:bg-[#6C4FF6]/10 hover:text-[#6C4FF6] px-2 py-0.5 rounded transition"
-          >
-            Code: {circle.inviteCode}
-            {copied ? <IconCheck size={12} className="text-emerald-500" /> : <IconCopy size={12} />}
+          <h3 className="text-sm font-medium text-white">{circle.name}</h3>
+          <button onClick={copyCode} className="mt-1 flex items-center gap-1 text-[10px] font-mono text-slate-500 hover:text-slate-300 transition-colors">
+            Code: {circle.inviteCode} {copied ? <IconCheck size={10} className="text-emerald-500" /> : <IconCopy size={10} />}
           </button>
         </div>
-        <div className="flex -space-x-2">
-          {(circle.members || []).slice(0, 5).map((m: any, i: number) => (
-            <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-[#121212] bg-[#6C4FF6] text-white flex items-center justify-center text-xs font-bold uppercase">
+        <div className="flex -space-x-1.5">
+          {(circle.members || []).slice(0, 4).map((m: any, i: number) => (
+            <div key={i} className="w-6 h-6 rounded-full border border-[#0a0a0a] bg-[#222] text-slate-400 flex items-center justify-center text-[9px] font-bold uppercase">
               {m.userId?.charAt(0) || '?'}
             </div>
           ))}
         </div>
       </div>
 
-      <div className="space-y-2 mt-4">
-        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-          <IconTrophy size={14} /> Members ({(circle.members || []).length})
-        </h4>
+      <div className="space-y-2">
+        <h4 className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-2 border-b border-[#1a1a1a] pb-2">Leaderboard</h4>
         {(circle.members || []).slice(0, 3).map((m: any, i: number) => (
-          <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-[#1A1A1A] rounded-xl border border-slate-100 dark:border-[#222]">
-            <div className="flex items-center gap-3">
-              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-amber-100 text-amber-600' : i === 1 ? 'bg-slate-200 text-slate-600' : 'bg-orange-100 text-orange-700'}`}>
-                {i + 1}
-              </span>
-              <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">Member {i + 1}</span>
+          <div key={i} className="flex items-center justify-between p-2 bg-[#111] border border-[#222] rounded-md">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-medium text-slate-500 w-3">{i + 1}.</span>
+              <span className="text-xs font-medium text-slate-300">Member {i + 1}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">Active</span>
-              <span className="text-xs font-bold text-orange-500 flex items-center gap-0.5"><IconFlame size={12} className="fill-orange-500" /> {7 - i}</span>
-            </div>
+            <div className="text-xs font-medium text-slate-400 flex items-center gap-1"><IconFlame size={12} className="text-slate-500" /> {7 - i}d</div>
           </div>
         ))}
       </div>

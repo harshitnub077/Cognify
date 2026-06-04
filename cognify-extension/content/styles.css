@@ -1,25 +1,35 @@
 /* Cognify Injected Styles - Native Feel */
 
 .cognify-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 4px; /* Match YouTube's border-radius */
-    font-family: "Roboto", Arial, sans-serif; /* Match YouTube's font */
-    font-size: 1.2rem; /* YouTube uses rems, this is ~12px */
-    font-weight: 500;
-    margin-top: 8px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    color: #f1f1f1; /* YouTube dark mode text color */
-    background-color: rgba(255, 255, 255, 0.1);
-    line-height: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    cursor: default;
+    background-color: rgba(150, 150, 150, 0.03);
+    border: 1px solid rgba(150, 150, 150, 0.2);
+    color: inherit;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
 }
 
 .cognify-badge:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(150, 150, 150, 0.06);
+}
+
+@keyframes cognify-pulse {
+    0% { transform: scale(1); opacity: 1; box-shadow: 0 0 8px rgba(239, 68, 68, 0.8); }
+    50% { transform: scale(1.3); opacity: 0.8; box-shadow: 0 0 16px rgba(239, 68, 68, 1); }
+    100% { transform: scale(1); opacity: 1; box-shadow: 0 0 8px rgba(239, 68, 68, 0.8); }
+}
+
+.cognify-pulse-dot {
+    animation: cognify-pulse 2s infinite ease-in-out;
 }
 
 /* Subtle Score Colors on text/icons instead of harsh backgrounds */
@@ -28,8 +38,8 @@
 .cognify-badge.red .badge-highlight { color: #ff4e45; }
 
 .cognify-separator {
-    color: rgba(255, 255, 255, 0.2);
-    margin: 0 4px;
+    color: rgba(150, 150, 150, 0.4);
+    font-weight: 300;
 }
 
 .cognify-brand {

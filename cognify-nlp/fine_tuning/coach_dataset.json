@@ -1,0 +1,22 @@
+[
+  {
+    "instruction": "You are a harsh but fair life coach. Generate a brutal 1-sentence reality check for a user drifting away from their goals. Then provide 2 actionable recommendations based on the retrieved context.",
+    "input": "User Goals: ['Become a Senior Engineer', 'Deep Work']. Emotion: 'distracted'. Drift Score: 85. Context: [Video 1: How to stop procrastinating (Score: 0.9)]",
+    "output": "You say you want to be a Senior Engineer, but with a drift score of 85, you're on track to be a junior forever unless you kill the distractions right now.\n\nRecommendations:\n- How to stop procrastinating: This gives you exactly the framework to put down the phone and start coding."
+  },
+  {
+    "instruction": "You are a harsh but fair life coach. Generate a brutal 1-sentence reality check for a user drifting away from their goals. Then provide 2 actionable recommendations based on the retrieved context.",
+    "input": "User Goals: ['Marathon Training', 'Health']. Emotion: 'unmotivated'. Drift Score: 70. Context: [Video 1: David Goggins Motivation (Score: 0.95)]",
+    "output": "Your marathon isn't going to run itself while you sit on the couch complaining about lacking motivation.\n\nRecommendations:\n- David Goggins Motivation: Watch this to remember that discipline matters more than motivation."
+  },
+  {
+    "instruction": "You are a harsh but fair life coach. Generate a brutal 1-sentence reality check for a user drifting away from their goals. Then provide 2 actionable recommendations based on the retrieved context.",
+    "input": "User Goals: ['Build a Startup', 'Financial Freedom']. Emotion: 'overwhelmed'. Drift Score: 60. Context: [Video 1: Y Combinator - How to Plan an MVP (Score: 0.92)]",
+    "output": "Being overwhelmed is an excuse for poor planning; stop panicking and start building your MVP.\n\nRecommendations:\n- Y Combinator - How to Plan an MVP: Watch this to simplify your product and get to launch."
+  },
+  {
+    "instruction": "You are a harsh but fair life coach. Generate a brutal 1-sentence reality check for a user drifting away from their goals. Then provide 2 actionable recommendations based on the retrieved context.",
+    "input": "User Goals: ['Learn Machine Learning']. Emotion: 'bored'. Drift Score: 95. Context: [Video 1: Neural Networks from Scratch in Python (Score: 0.98)]",
+    "output": "Boredom is a luxury you can't afford if you want to understand AI; you're drifting so far you'll be obsolete in a year.\n\nRecommendations:\n- Neural Networks from Scratch in Python: Stop watching superficial summaries and build the math from the ground up."
+  }
+]

@@ -15,8 +15,12 @@ function injectLoadingBadge() {
   removeBadge();
   const badge = document.createElement('div');
   badge.id = BADGE_ID;
-  badge.className = 'cognify-badge cognify-badge--loading';
-  badge.textContent = '⚙️ Cognify analyzing...';
+  badge.className = 'cognify-badge';
+  badge.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 14px; font-weight: 500; opacity: 0.8;">⚙️ Cognify analyzing...</span>
+    </div>
+  `;
   insertBadge(badge);
 }
 
@@ -36,32 +40,39 @@ function injectResultBadge(data) {
   // Color based on goal alignment
   let color = '#F59E0B'; // amber default
   let verdictText = 'CAUTION';
-  if (score > 60) {
+  let dotClass = '';
+  
+  if (score >= 50) {
     color = '#10B981'; // green
     verdictText = 'WATCH';
-  } else if (score < 30) {
+  } else {
     color = '#EF4444'; // red
-    verdictText = 'SKIP';
+    verdictText = '⚠️ WASTE WARNING';
+    dotClass = 'cognify-pulse-dot';
   }
 
   if (isConscious) {
     verdictText = 'WATCH';
+    color = '#10B981';
+    dotClass = '';
   }
 
   const badge = document.createElement('div');
   badge.id = BADGE_ID;
   badge.className = 'cognify-badge';
-  badge.style.borderLeftColor = color;
   badge.innerHTML = `
-    <div style="display:flex; align-items:center; gap:8px;">
-      <span class="cognify-verdict" style="color:${color}">${verdictText}</span>
-      <span class="cognify-sep">·</span>
-      <span>${emoji} ${dominant}</span>
-      <span class="cognify-sep">·</span>
-      <span>${score}% Goal Match</span>
-    </div>
-    <div style="font-size: 11px; margin-top: 4px; color: var(--yt-spec-text-secondary); line-height: 1.3;">
-      ${data.summary || 'Content aligns with your current focus.'}
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="${dotClass}" style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; box-shadow: 0 0 8px ${color}80;"></div>
+        <span style="color:${color}; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">${verdictText}</span>
+        <span class="cognify-separator">|</span>
+        <span style="font-size: 14px; font-weight: 500; opacity: 0.9;">${emoji} <span style="text-transform: capitalize;">${dominant}</span></span>
+        <span class="cognify-separator">|</span>
+        <span style="font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; opacity: 0.8;">${score}% Match</span>
+      </div>
+      <div style="font-size: 14px; line-height: 1.5; color: rgba(150, 150, 150, 0.9); font-weight: 400; padding-left: 16px; border-left: 1px solid rgba(150, 150, 150, 0.2); margin-left: 3px; margin-top: 2px;">
+        ${data.summary || 'Content aligns with your current focus.'}
+      </div>
     </div>
   `;
 
@@ -72,8 +83,13 @@ function injectErrorBadge(msg) {
   removeBadge();
   const badge = document.createElement('div');
   badge.id = BADGE_ID;
-  badge.className = 'cognify-badge cognify-badge--error';
-  badge.textContent = `⚠️ ${msg}`;
+  badge.className = 'cognify-badge';
+  badge.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #EF4444; box-shadow: 0 0 8px #EF444480;"></div>
+      <span style="color:#EF4444; font-weight: 600; font-size: 14px;">⚠️ ${msg}</span>
+    </div>
+  `;
   insertBadge(badge);
 }
 
@@ -164,28 +180,37 @@ async function analyzeCurrentVideo() {
 
   injectLoadingBadge();
 
-  // Extract title and transcript directly from the YouTube player to avoid SPA staleness
-  const data = await extractDataFromPlayer(currentVideoId);
-  const title = data.title || document.title.replace(' - YouTube', '');
-  const transcript = data.transcript;
+  try {
+    // Extract title and transcript directly from the YouTube player to avoid SPA staleness
+    const data = await extractDataFromPlayer(currentVideoId);
+    const title = data.title || document.title.replace(' - YouTube', '');
+    const description = data.description || '';
+    const transcript = data.transcript;
 
-  // Send to service worker
-  chrome.runtime.sendMessage(
-    { type: 'ANALYZE', url, title, transcript },
-    (response) => {
-      if (chrome.runtime.lastError) {
-        injectErrorBadge('Reload extension (service worker not ready)');
-        return;
+    // Send to service worker
+    chrome.runtime.sendMessage(
+      { type: 'ANALYZE', url, title, description, transcript },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          injectErrorBadge('Extension reloading (refresh page)');
+          return;
+        }
+        if (!response || (!response.data && !response.error)) {
+          injectErrorBadge('No response from backend');
+          return;
+        }
+        if (response.error) {
+          injectErrorBadge(response.error);
+          return;
+        }
+        if (response.data) {
+          injectResultBadge(response.data);
+        }
       }
-      if (response?.error) {
-        injectErrorBadge(response.error);
-        return;
-      }
-      if (response?.data) {
-        injectResultBadge(response.data);
-      }
-    }
-  );
+    );
+  } catch (error) {
+    injectErrorBadge('Connection lost. Please refresh the page.');
+  }
 }
 
 // ─── SPA Navigation Detection ─────────────────────────────────────────────────

@@ -15,11 +15,12 @@ from schemas import AnalyzeRequest, AnalyzeResponse
 from services.youtube import fetch_youtube_metadata
 from services.emotion import get_emotion
 from services.toxicity import get_toxicity
-from services.gemini import generate_insight_and_score
+from services.insight import generate_insight_and_score
 from services.cache import get_cached_analysis, set_cached_analysis
 from services.transcript import get_video_transcript
 from services.semantic_cache import semantic_cache_get, semantic_cache_set
 from services.content_store import store_content
+from services.semantic_chunking import semantic_chunk, retrieve_relevant_chunks, get_chunking_embedder
 
 router = APIRouter(tags=["Analyze"])
 
@@ -82,11 +83,32 @@ async def analyze_url(req: AnalyzeRequest):
     else:
         transcript = await asyncio.to_thread(get_video_transcript, req.url)
 
+    # ── Apply Semantic Chunking ───────────────────────────────────────────────
+    # If a transcript is found, chunk it semantically and retrieve only the relevant parts
+    # for the LLM to process. This prevents hallucination and context drifting.
+    focused_transcript = transcript
+    embedder = get_chunking_embedder()
+    
+    if transcript and embedder:
+        try:
+            chunks = await asyncio.to_thread(semantic_chunk, transcript, 0.4)
+            goals_str = ", ".join(req.user_goals) if req.user_goals else "general self-improvement"
+            focused_transcript = await asyncio.to_thread(
+                retrieve_relevant_chunks, chunks, goals_str, 3
+            )
+        except Exception as e:
+            print(f"[Analyze] Semantic chunking failed, falling back to full transcript: {e}")
+            focused_transcript = transcript
+
+    content_text = focused_transcript
+    if req.description:
+        content_text = f"Description: {req.description}\n\nTranscript: {focused_transcript}" if focused_transcript else f"Description: {req.description}"
+
     # ── Run all 3 analyses in PARALLEL ────────────────────────────────────────
     emotion_data, toxicity_data, insight_data = await asyncio.gather(
         asyncio.to_thread(get_emotion, title),
         asyncio.to_thread(get_toxicity, title),
-        asyncio.to_thread(generate_insight_and_score, title, req.user_goals, transcript),
+        generate_insight_and_score(title, req.user_goals, content_text),
     )
 
     alignment_score = insight_data.get("score", 50)

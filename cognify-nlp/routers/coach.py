@@ -12,10 +12,9 @@ from services.drift_coach import analyze_drift
 from services.content_store import semantic_search_content
 from services.llm_router import get_router_status
 
-try:
-    from services.free_nlp import redis_client
-except ImportError:
-    redis_client = None
+import os
+import redis.asyncio as redis
+redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
 router = APIRouter(prefix="/coach", tags=["Coach"])
 

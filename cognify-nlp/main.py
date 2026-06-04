@@ -14,7 +14,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from routers import analyze, recommend, health
+from routers import analyze, recommend, health, search
 from routers.coach import router as coach_router
 
 
@@ -47,6 +47,11 @@ async def lifespan(app: FastAPI):
     from services.semantic_cache import init_semantic_cache
     init_semantic_cache(embedder, qdrant_client)
     print("✅ Semantic cache ready")
+
+    # 3.5 Initialize semantic chunking
+    from services.semantic_chunking import init_semantic_chunking
+    init_semantic_chunking(embedder)
+    print("✅ Semantic chunking ready")
 
     # 4. Initialize content store (Qdrant collection)
     from services.content_store import init_content_store
@@ -119,6 +124,7 @@ app.include_router(analyze.router)
 app.include_router(recommend.router)
 app.include_router(coach_router)
 app.include_router(health.router)
+app.include_router(search.router)
 
 
 # ── Root ──────────────────────────────────────────────────────────────────────

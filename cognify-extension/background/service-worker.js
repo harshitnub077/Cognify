@@ -28,21 +28,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             
             // response already declared above
             const title = response?.videoDetails?.title || document.title.replace(' - YouTube', '');
+            const description = response?.videoDetails?.shortDescription || null;
             
             const tracks = response?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
             if (!tracks || tracks.length === 0) {
-              return { title, transcript: null };
+              return { title, description, transcript: null };
             }
             
             const track = tracks.find(t => t.languageCode === 'en' || t.languageCode.startsWith('en')) || tracks[0];
             if (!track || !track.baseUrl) {
-              return { title, transcript: null };
+              return { title, description, transcript: null };
             }
             
             const res = await fetch(track.baseUrl);
             const xml = await res.text();
             const textMatches = xml.match(/<text.*?>([\s\S]*?)<\/text>/g);
-            if (!textMatches) return { title, transcript: null };
+            if (!textMatches) return { title, description, transcript: null };
             
             const transcript = textMatches.map(t => {
               return t.replace(/<text.*?>|<\/text>/g, '')
@@ -57,18 +58,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               ? transcript.substring(0, 200000) + " ... [Truncated]" 
               : transcript;
               
-            return { title, transcript: safeTranscript };
+            return { title, description, transcript: safeTranscript };
           } catch (e) {
             await sleep(250);
           }
         }
-        return { title: document.title.replace(' - YouTube', ''), transcript: null };
+        return { title: document.title.replace(' - YouTube', ''), description: null, transcript: null };
       }
     }).then((results) => {
       sendResponse(results[0].result);
     }).catch((err) => {
       console.error('[Cognify SW] Scripting error:', err);
-      sendResponse({ title: null, transcript: null });
+      sendResponse({ title: null, description: null, transcript: null });
     });
     return true;
   }
@@ -93,6 +94,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           body: JSON.stringify({
             url: message.url,
             title: message.title,
+            description: message.description,
             transcript: message.transcript
           })
         });

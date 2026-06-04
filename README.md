@@ -1,36 +1,134 @@
 # Cognify 🧠: Agentic Content Intelligence
 
-Cognify is an AI-powered, conscious content intelligence platform engineered to cure mindless scrolling. It operates as an **autonomous Agentic RAG system**, actively analyzing a user's digital diet (YouTube, Twitter) and providing real-time, personalized reality checks to align their content consumption with their stated life goals.
+Cognify is an AI-powered, conscious content intelligence platform engineered to cure mindless scrolling. It operates as an **autonomous Agentic RAG system**, actively analyzing your digital diet (YouTube, Twitter) and providing real-time, personalized reality checks to align your content consumption with your stated life goals.
 
-## 🌟 Core Architecture & Engineering Feats
+The system enforces a premium, minimalist "Apple/Linear" monochrome aesthetic across the dashboard to reduce cognitive overload and prevent gamification distractions.
 
-Built for extreme performance and zero cloud compute cost, the backend architecture relies on advanced NLP techniques, local vector databases, and smart LLM routing.
+---
 
-### 1. Agentic RAG "Drift Coach"
-- **Contextual Awareness**: The agent retrieves the user’s last 20 consumed videos/articles from a vector database and maps them against the user's life goals.
-- **Harsh but Fair Coach**: Using the Groq Llama 3 model, it generates a "Drift Score" (0-100), a brutal 1-sentence reality check, and actionable algorithmic fixes.
+## 🏗 System Architecture
 
-### 2. Multi-LLM Smart Router with Fallback
-- Designed a custom **Smart LLM Router** that transparently cascades requests to ensure 100% uptime with **Zero Cost**.
-- **Priority Cascade**: 
-  1. Groq API (Llama 3, lightning fast, free tier) 
-  2. Gemini 2.0 Flash (free tier fallback)
-- Features Redis-backed daily quota tracking and automatic failovers.
+Cognify utilizes a sophisticated microservice architecture spanning a Chrome extension, a high-concurrency Node.js backend, and an asynchronous Python FastAPI NLP engine.
 
-### 3. Local Vector Embeddings & Semantic Caching
-- **HuggingFace Embeddings**: Bypassed paid OpenAI embeddings by running `sentence-transformers/all-MiniLM-L6-v2` locally within the FastAPI runtime.
-- **Qdrant Vector DB**: Utilized a local Qdrant instance to store consumed content vectors.
-- **0.95 Similarity Cache**: Engineered a semantic cache layer. Before calling the LLM to analyze a video, it embeds the title and queries Qdrant. If a >0.95 similarity match is found, it bypasses the LLM entirely, saving massive compute.
+```mermaid
+graph TD
+    User([User]) --> |Browses Web| Ext[Chrome Extension]
+    Ext --> |Extracts DOM & Transcript| NLP[FastAPI NLP Engine]
+    
+    subgraph Agentic RAG System
+        NLP --> |Local CPU Embedding| Embed[HuggingFace Embedder]
+        Embed --> |Similarity Search| Qdrant[(Qdrant Vector DB)]
+        Qdrant -.-> |Matched Context| NLP
+        NLP --> |Context + Prompt| Router{Smart LLM Router}
+        Router --> |Primary| Groq[Groq API Llama-3]
+        Router -.-> |Fallback| Gemini[Gemini 2.0 API]
+    end
+    
+    Groq --> NLP
+    Gemini --> NLP
+    
+    NLP --> |Alignment Verdict| Ext
+    
+    Ext --> |Persists Logs| Backend[Node.js / Express Backend]
+    Backend --> DB[(PostgreSQL)]
+    Backend --> Redis[(Redis Quotas/Cache)]
+    
+    User --> |Views Analytics| Frontend[React + Vite Dashboard]
+    Frontend <--> Backend
+```
 
-### 4. Fully Async Python Backend
-- High-concurrency **FastAPI** backend utilizing `asyncio.gather` for simultaneous web-scraping, embedding generation, and LLM inferences.
-- Uses `asyncio.to_thread` for CPU-bound tasks (like local HuggingFace embeddings) to prevent event loop blocking.
+---
 
-## 🏗 Tech Stack
-- **AI & NLP Engine**: Python 3.11, FastAPI, HuggingFace (`sentence-transformers`), Qdrant, Groq (Llama 3), Gemini.
-- **Backend Infrastructure**: Node.js, Express, Prisma ORM, PostgreSQL, Redis (Caching/Quotas).
-- **Frontend**: React 18, Vite, Tailwind CSS, Zustand.
-- **Extension**: Chrome Manifest V3 side-panel extension.
+## 🤖 Agentic RAG Workflow
+
+The core of Cognify is the **Drift Coach**. Rather than blindly sending data to OpenAI, Cognify uses a locally-hosted semantic embedding model to cache requests, and a Smart LLM router to distribute prompt inference for zero-cost operation.
+
+```mermaid
+sequenceDiagram
+    participant Chrome as Chrome Extension
+    participant API as FastAPI (NLP Engine)
+    participant Qdrant as Qdrant DB
+    participant LLM as Smart LLM Router
+
+    Chrome->>API: POST /analyze (Title, Description, Transcript)
+    API->>API: Generate Local Embedding (all-MiniLM-L6-v2)
+    API->>Qdrant: Search Semantic Cache (Similarity > 0.95)
+    
+    alt Cache Hit
+        Qdrant-->>API: Return Cached Alignment & Verdict
+    else Cache Miss
+        API->>LLM: Supply Content + User Directive
+        LLM-->>API: Generate Score, Emotion, Summary & Reality Check
+        API->>Qdrant: Store New Embedding & Metadata
+    end
+    
+    API-->>Chrome: Return Content Intelligence
+```
+
+### Advanced AI Capabilities:
+1. **Contextual Awareness**: The agent retrieves the user’s last 20 consumed items to establish a baseline of "Digital Drift."
+2. **Harsh but Fair Coach**: Generates a "Drift Score" (0-100) alongside brutal, 1-sentence reality checks.
+3. **Zero-Cost LLM Routing**: 
+   - Primary: **Groq API** (Llama 3, lightning fast, free tier).
+   - Fallback: **Gemini 2.0 Flash** API.
+4. **Local Vector Embeddings**: Uses `sentence-transformers/all-MiniLM-L6-v2` inside the FastAPI runtime via `asyncio.to_thread` to prevent event loop blocking.
+
+---
+
+## 🗄️ Entity-Relationship Diagram
+
+The persistent data storage is handled by PostgreSQL via Prisma ORM.
+
+```mermaid
+erDiagram
+    USER ||--o| USER_PROFILE : has
+    USER ||--o{ CONTENT_LOG : tracks
+    USER ||--o{ DRIFT_SCORE : accumulates
+    USER ||--o{ STREAK : maintains
+    USER ||--o{ COACH_SESSION : engages
+    USER ||--o{ BOOKMARK : saves
+    USER ||--o{ ACHIEVEMENT : unlocks
+    USER ||--o{ CIRCLE_MEMBER : joins
+
+    COACH_SESSION ||--o{ COACH_MESSAGE : contains
+    CIRCLE ||--o{ CIRCLE_MEMBER : includes
+
+    USER {
+        uuid id PK
+        string email
+    }
+    
+    CONTENT_LOG {
+        uuid id PK
+        string url
+        string contentType
+        boolean isConscious
+        int score
+        string summary
+        string dominantEmotion
+    }
+    
+    DRIFT_SCORE {
+        float score
+        string trend
+    }
+    
+    CIRCLE {
+        string name
+        string inviteCode
+    }
+```
+
+---
+
+## 🛠 Tech Stack
+
+- **AI & NLP Engine**: Python 3.11, FastAPI, HuggingFace (`sentence-transformers`), Qdrant Vector DB.
+- **Backend Infrastructure**: Node.js, Express, Prisma ORM, PostgreSQL, Redis.
+- **Frontend Dashboard**: React 18, Vite, Tailwind CSS (Strict Monochrome Apple/Linear Theme), Zustand.
+- **Extension Integration**: Chrome Manifest V3 side-panel and content scripts.
+
+---
 
 ## 🚀 Local Setup
 
@@ -66,6 +164,6 @@ npm run dev
 ```
 
 ## 🔒 Security & Performance
-- **Zero-Paid APIs**: The entire NLP architecture is engineered to run free and fast using local models + free tier cloud GPUs (Groq).
-- **Concurrency Control**: Async data pipelines prevent starvation during peak load.
-- Input validated via `pydantic` and `zod`.
+- **Zero-Paid APIs**: The entire NLP architecture is engineered to run free and fast using local models + free tier cloud GPUs.
+- **Concurrency Control**: Async data pipelines (`asyncio.gather`) prevent starvation during peak load.
+- **Input Validation**: Hardened endpoints using `pydantic` (Python) and `zod` (Node.js).
