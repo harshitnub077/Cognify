@@ -23,14 +23,23 @@ router.post('/onboarding', requireAuth, async (req: AuthRequest, res) => {
 
     const { identities, reduceGoals, platforms } = validation.data;
 
-    const profile = await prisma.userProfile.update({
+    const profile = await prisma.userProfile.upsert({
       where: { userId },
-      data: {
+      update: {
         focusAreas: identities,
         reduceGoals,
         platforms,
         onboarded: true,
       },
+      create: {
+        userId,
+        focusAreas: identities,
+        reduceGoals,
+        platforms,
+        onboarded: true,
+        displayName: req.user.user_metadata?.full_name || '',
+        avatarUrl: req.user.user_metadata?.avatar_url || '',
+      }
     });
 
     res.json({ success: true, profile: { ...profile, identities: profile.focusAreas || [] } });
@@ -71,7 +80,7 @@ router.patch('/profile', requireAuth, async (req: AuthRequest, res) => {
       where: { userId },
       data: { displayName: displayName.trim() }
     });
-    res.json({ success: true, profile });
+    res.json({ success: true, profile: { ...profile, identities: profile.focusAreas || [] } });
   } catch (error) {
     console.error('Error updating profile:', error);
     res.status(500).json({ error: 'Failed to update profile' });

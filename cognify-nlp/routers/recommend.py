@@ -44,7 +44,7 @@ async def get_recommendations(req: RecommendRequest):
         else:
             search_query = query_cache[req.goal]["search_query"]
             
-        results = YoutubeSearch(search_query, max_results=20).to_dict()
+        results = YoutubeSearch(search_query, max_results=50).to_dict()
             
         if len(results) > req.limit:
             sampled_videos = random.sample(results, req.limit)

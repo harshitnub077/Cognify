@@ -35,6 +35,7 @@ const Goals = () => {
         platforms: profile?.platforms || []
       });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Goals updated!');
       setEditing(false);
     } catch {
@@ -87,7 +88,7 @@ const Goals = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            className="card p-10 lg:p-16 bg-[#0a0a0a] border border-[#222]"
+            className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-10 lg:p-16 bg-[#0a0a0a] border border-[#1a1a1a]"
           >
             <div className="mb-6">
               <h3 className="text-xs font-medium flex items-center gap-2 text-white mb-2">
@@ -100,7 +101,7 @@ const Goals = () => {
               value={goalText}
               onChange={(e) => setGoalText(e.target.value)}
               placeholder="E.g. 'I am mastering advanced machine learning concepts for my upcoming interviews...'"
-              className="w-full h-48 bg-[#111] border border-[#222] hover:border-[#333] focus:border-white focus:ring-0 rounded-md p-6 text-lg font-medium resize-none transition-colors text-white placeholder:text-slate-600 focus:outline-none"
+              className="w-full h-48 bg-[#0a0a0a] border border-[#1a1a1a] hover:border-[#1a1a1a] focus:border-white focus:ring-0 rounded-md p-6 text-lg font-medium resize-none transition-colors text-white placeholder:text-slate-600 focus:outline-none"
             />
           </motion.div>
         ) : (
@@ -109,13 +110,16 @@ const Goals = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-8 lg:p-12 relative overflow-hidden text-white">
+            <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-8 lg:p-12 relative overflow-hidden text-white group">
+              <div className="absolute top-1/2 -translate-y-1/2 -right-20 opacity-[0.03] pointer-events-none group-hover:scale-[1.1] transition-transform duration-1000">
+                <IconTarget size={400} stroke={2.5} />
+              </div>
               <div className="relative z-10 max-w-4xl">
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[#111] border border-[#222] text-xs font-medium text-slate-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white mr-2" /> Active
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-md bg-[#111] border border-[#222] text-xs font-medium text-white shadow-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse mr-2" /> Active
                   </span>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[#111] border border-[#222] text-xs font-medium text-slate-300">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-md bg-[#111] border border-[#222] text-xs font-medium text-white shadow-sm">
                     Neural Sync
                   </span>
                 </div>
@@ -138,7 +142,7 @@ const Goals = () => {
         )}
       </AnimatePresence>
 
-      <div className="pt-8 border-t border-surface-border">
+      <div className="pt-8 border-t border-[#1a1a1a]">
         <WrappedGoalStrip goal={currentGoal} />
       </div>
     </div>
@@ -146,7 +150,7 @@ const Goals = () => {
 };
 
 const GoalStrip = ({ goal }: { goal: string }) => {
-  const { data: recommendations, isLoading, refetch } = useRecommendations(goal, 12);
+  const { data: recommendations, isLoading, refetch } = useRecommendations(goal, 24);
 
   return (
     <div className="space-y-8 mt-4">
@@ -156,7 +160,7 @@ const GoalStrip = ({ goal }: { goal: string }) => {
         </div>
         <button 
           onClick={() => refetch()} 
-          className="text-xs font-medium text-slate-400 hover:text-white flex items-center gap-2 transition-colors border border-[#222] px-3 py-1.5 rounded-md hover:bg-[#111]"
+          className="text-xs font-medium text-slate-400 hover:text-white flex items-center gap-2 transition-colors border border-[#1a1a1a] px-3 py-1.5 rounded-md hover:bg-[#0a0a0a]"
         >
           <IconRefresh size={14} /> Refresh
         </button>

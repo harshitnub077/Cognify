@@ -28,7 +28,7 @@ def _compute_emotion_profile(items: list[dict]) -> dict:
         return {}
     emotion_totals: dict[str, float] = {}
     for item in items:
-        dominant = item.get("dominant_emotion", "neutral")
+        dominant = item.get("dominant_emotion") or "neutral"
         emotion_totals[dominant] = emotion_totals.get(dominant, 0) + 1
 
     total = sum(emotion_totals.values())
@@ -45,7 +45,7 @@ def _compute_topic_clusters(items: list[dict]) -> list[str]:
                   "this", "that", "what", "why", "best", "top", "vs"}
     word_counts: Counter = Counter()
     for item in items:
-        title = item.get("title", "")
+        title = item.get("title") or ""
         words = [w.lower().strip("?!.,\"'") for w in title.split() if len(w) > 3]
         word_counts.update([w for w in words if w not in stop_words])
     return [word for word, _ in word_counts.most_common(8)]
@@ -53,28 +53,28 @@ def _compute_topic_clusters(items: list[dict]) -> list[str]:
 
 def _compute_verdict_distribution(items: list[dict]) -> dict:
     """Tool: Computes watch/caution/skip ratios."""
-    counts = Counter(item.get("verdict", "caution") for item in items)
+    counts = Counter(item.get("verdict") or "caution" for item in items)
     total = max(sum(counts.values()), 1)
     return {v: round(counts.get(v, 0) / total * 100, 1) for v in ["watch", "caution", "skip"]}
 
 
 def _compute_avg_alignment(items: list[dict]) -> float:
     """Tool: Average goal alignment score across recent content."""
-    scores = [item.get("alignment_score", 50) for item in items if item.get("alignment_score") is not None]
+    scores = [item.get("alignment_score") for item in items if item.get("alignment_score") is not None]
     return round(sum(scores) / len(scores), 1) if scores else 50.0
 
 
 def _find_worst_offenders(items: list[dict], n: int = 3) -> list[str]:
     """Tool: Returns titles of lowest-alignment-score items."""
-    sorted_items = sorted(items, key=lambda x: x.get("alignment_score", 100))
-    return [item.get("title", "Unknown")[:80] for item in sorted_items[:n]]
+    sorted_items = sorted(items, key=lambda x: x.get("alignment_score") if x.get("alignment_score") is not None else 100)
+    return [(item.get("title") or "Unknown")[:80] for item in sorted_items[:n]]
 
 
 def _find_goal_gaps(items: list[dict], goals: list[str]) -> list[str]:
     """Tool: Finds goals that have zero or minimal content coverage."""
     if not goals:
         return []
-    all_titles = " ".join(item.get("title", "") for item in items).lower()
+    all_titles = " ".join(item.get("title") or "" for item in items).lower()
     gaps = []
     for goal in goals:
         # Check if any keyword from the goal appears in the watched content
@@ -191,7 +191,7 @@ async def analyze_drift(
         asyncio.to_thread(_find_goal_gaps, recent_items, goals),
     )
 
-    recent_titles = [item.get("title", "Unknown") for item in recent_items]
+    recent_titles = [item.get("title") or "Unknown" for item in recent_items]
 
     # ── Step 3: Build context-rich prompt ─────────────────────────────────────
     prompt = _build_coach_prompt(

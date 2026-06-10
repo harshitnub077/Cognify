@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import prisma from '../lib/prisma';
 
 const router = Router();
 
 // Only initialize if API key is present
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 // Mock streaming for local testing without API credits
 const streamMockResponse = (res: any) => {
@@ -33,12 +33,13 @@ const streamMockResponse = (res: any) => {
 };
 
 router.post('/message', requireAuth, async (req: any, res: any) => {
+  let session: any;
   try {
     const { message, conversation_history = [], user_context } = req.body;
     const userId = req.user.id;
 
     // Get or create active session
-    let session = await prisma.coachSession.findFirst({
+    session = await prisma.coachSession.findFirst({
       where: { userId },
       orderBy: { createdAt: 'desc' }
     });
@@ -58,7 +59,7 @@ router.post('/message', requireAuth, async (req: any, res: any) => {
       }
     });
 
-    if (!genAI) {
+    if (!groq) {
       // Mock flow
       await prisma.coachMessage.create({
         data: {
@@ -70,11 +71,14 @@ router.post('/message', requireAuth, async (req: any, res: any) => {
       return streamMockResponse(res);
     }
 
-    const systemPrompt = `You are the Cognify Coach — a Socratic AI designed to help users develop digital consciousness and align their online habits with their life goals.
+    const systemPrompt = `You are the Cognify Coach — a strictly focused Socratic AI designed EXCLUSIVELY to help users develop digital consciousness, manage screen time, and align online habits with their life goals.
 
-CRITICAL RULE: You NEVER give direct advice, instructions, or answers. You ONLY ask questions.
-Every single response must end with exactly ONE thoughtful question.
-Your questions should be: specific to what the user just said, psychologically probing, non-judgmental, and designed to prompt genuine self-reflection.
+CRITICAL BOUNDARIES:
+1. NEVER answer general knowledge questions, write code, do math, or discuss outer world events.
+2. If the user asks about ANYTHING unrelated to their digital habits, screen time, content consumption, or goals, politely refuse and pivot back to their digital alignment. (e.g., "I am here to guide your digital focus, not to answer general questions. Let's return to your goals...")
+3. NEVER give direct advice, instructions, or answers. You ONLY ask questions.
+4. Every single response must end with exactly ONE thoughtful question.
+5. Your questions should be: specific to what the user just said, psychologically probing, non-judgmental, and designed to prompt genuine self-reflection.
 
 User context:
 - Identity goals: ${user_context?.goals?.join(', ') || 'None'}
@@ -85,32 +89,41 @@ User context:
 Conversation style: warm, curious, direct but never preachy. Like a wise mentor, not a therapist or a chatbot.
 Max response length: 3 sentences + 1 question.`;
 
-    const model = genAI.getGenerativeModel({ 
-        model: 'gemini-2.5-flash',
-        systemInstruction: systemPrompt 
+    // Map history to OpenAI format
+    const groqHistory: any[] = [{ role: 'system', content: systemPrompt }];
+    
+    for (const msg of conversation_history) {
+      if (!msg.content?.trim()) continue; // Skip empty messages
+      // Map 'coach' back to 'assistant'
+      const role = msg.role === 'coach' ? 'assistant' : 'user';
+      groqHistory.push({ role, content: msg.content });
+    }
+    
+    // Add the current message
+    groqHistory.push({ role: 'user', content: message });
+
+    const stream = await groq.chat.completions.create({
+      messages: groqHistory,
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.7,
+      stream: true,
     });
 
-    const chat = model.startChat({
-        history: conversation_history.map((msg: any) => ({
-            role: msg.role === 'coach' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
-        }))
-    });
-
+    // Only write headers AFTER the API call succeeds to prevent crashing on errors
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
     });
 
-    const streamResult = await chat.sendMessageStream(message);
-
     let fullContent = "";
 
-    for await (const chunk of streamResult.stream) {
-      const text = chunk.text();
-      fullContent += text;
-      res.write(`data: ${JSON.stringify({ text })}\n\n`);
+    for await (const chunk of stream) {
+      const text = chunk.choices[0]?.delta?.content || "";
+      if (text) {
+        fullContent += text;
+        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+      }
     }
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
@@ -125,9 +138,23 @@ Max response length: 3 sentences + 1 question.`;
       }
     });
 
-  } catch (error) {
-    console.error('Coach Message Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  } catch (error: any) {
+    console.error('Coach Message Error:', error.message);
+    
+    // Automatically fallback to mock response if Gemini API fails (e.g., 429 Quota Exceeded)
+    try {
+      await prisma.coachMessage.create({
+        data: {
+          sessionId: session.id,
+          role: 'coach',
+          content: "I notice your alignment score dipped to 68%. What do you think triggered this shift in your consumption habits this week?"
+        }
+      });
+      return streamMockResponse(res);
+    } catch (dbError) {
+      console.error('Failed to save mock response:', dbError);
+      res.status(500).json({ error: 'Internal server error and AI quota exhausted' });
+    }
   }
 });
 

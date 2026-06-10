@@ -36,7 +36,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           </p>
           <button 
             onClick={() => this.setState({ hasError: false, error: undefined })}
-            className="flex items-center gap-2 text-xs font-bold bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#333] px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-[#222] transition shadow-sm"
+            className="flex items-center gap-2 text-xs font-bold bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-[#1a1a1a] px-4 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-[#222] transition shadow-sm"
           >
             <IconRefresh size={14} /> Try Again
           </button>

@@ -71,6 +71,7 @@ const Settings = () => {
     try {
       await api.patch('/user/profile', { displayName: displayName.trim() });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Profile updated');
     } catch {
       toast.error('Failed to save.');
@@ -96,7 +97,7 @@ const Settings = () => {
           <h2 className="text-sm font-medium text-white mb-4">Profile</h2>
           <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-5">
             <div className="flex items-center gap-5 mb-6">
-              <div className="w-14 h-14 rounded-full bg-[#111] border border-[#222] flex items-center justify-center text-lg font-medium text-white">
+              <div className="w-14 h-14 rounded-full bg-[#0a0a0a] border border-[#1a1a1a] flex items-center justify-center text-lg font-medium text-white">
                 {displayName?.charAt(0) || user?.email?.charAt(0) || '?'}
               </div>
               <div>
@@ -111,7 +112,7 @@ const Settings = () => {
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
                 placeholder="Display name"
-                className="flex-1 bg-transparent border border-[#222] text-sm text-white placeholder-slate-600 px-3 py-2 rounded-md focus:outline-none focus:border-[#444] transition-colors"
+                className="flex-1 bg-transparent border border-[#1a1a1a] text-sm text-white placeholder-slate-600 px-3 py-2 rounded-md focus:outline-none focus:border-[#444] transition-colors"
               />
               <button type="submit" disabled={saving} className="bg-white text-black text-sm px-4 py-2 rounded-md font-medium hover:bg-slate-200 transition-colors min-w-[80px]">
                 {saving ? <IconLoader2 size={16} className="animate-spin mx-auto" /> : 'Save'}
@@ -132,10 +133,10 @@ const Settings = () => {
               <button
                 key={p.id}
                 onClick={() => setPersona(p.id)}
-                className="w-full flex items-center justify-between p-4 hover:bg-[#111] transition-colors text-left"
+                className="w-full flex items-center justify-between p-4 hover:bg-[#0a0a0a] transition-colors text-left"
               >
                 <div>
-                  <h4 className={cn('text-sm font-medium', persona === p.id ? 'text-white' : 'text-slate-300')}>{p.name}</h4>
+                  <h4 className={cn('text-sm font-medium', persona === p.id ? 'text-white' : 'text-white')}>{p.name}</h4>
                   <p className="text-xs text-slate-500 mt-1">{p.desc}</p>
                 </div>
                 {persona === p.id && <IconCheck size={18} className="text-white" />}
@@ -210,7 +211,7 @@ const Settings = () => {
           <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg">
             <button 
               onClick={() => { if (confirm('Are you sure you want to sign out?')) signOut(); }} 
-              className="w-full flex items-center justify-between p-4 hover:bg-[#111] transition-colors text-left"
+              className="w-full flex items-center justify-between p-4 hover:bg-[#0a0a0a] transition-colors text-left"
             >
               <div className="flex items-center gap-3">
                 <IconLogout size={18} className="text-red-500" />

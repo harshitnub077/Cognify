@@ -16,7 +16,7 @@ const Saved = () => {
       {isLoading ? (
         <div className="text-center text-slate-500 py-12 text-sm">Loading...</div>
       ) : !bookmarks || bookmarks.length === 0 ? (
-        <div className="bg-[#050505] border border-dashed border-[#222] rounded-lg p-12 text-center text-slate-500 mt-10">
+        <div className="bg-[#050505] border border-dashed border-[#1a1a1a] rounded-lg p-12 text-center text-slate-500 mt-10">
           <IconBookmark size={32} className="mx-auto mb-3 text-[#333]" />
           <p className="text-sm font-medium">No saved content</p>
         </div>

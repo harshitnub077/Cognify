@@ -6,14 +6,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node src/index.ts",
-    "dev": "NODE_OPTIONS='--dns-result-order=ipv4first' nodemon src/index.ts"
+    "dev": "NODE_OPTIONS='--dns-result-order=ipv4first' nodemon src/index.ts",
+    "build": "tsc",
+    "start:prod": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.100.1",
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
@@ -21,17 +22,14 @@
     "@supabase/supabase-js": "^2.106.2",
     "@types/pg": "^8.20.0",
     "axios": "^1.16.1",
-    "bullmq": "^5.77.6",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
+    "groq-sdk": "^1.2.1",
     "helmet": "^8.2.0",
-    "ioredis": "^5.11.0",
     "morgan": "^1.10.1",
     "pg": "^8.21.0",
-    "rate-limit-redis": "^5.0.0",
-    "winston": "^3.19.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

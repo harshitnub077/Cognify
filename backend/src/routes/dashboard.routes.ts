@@ -43,7 +43,7 @@ router.get('/stats', requireAuth, async (req: AuthRequest, res) => {
     });
 
     res.json({
-        profile,
+        profile: profile ? { ...profile, identities: profile.focusAreas || [] } : null,
         stats: {
             consciousPercentage,
             avgScore,

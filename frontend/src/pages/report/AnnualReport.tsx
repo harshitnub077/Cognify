@@ -85,7 +85,7 @@ const AnnualReport = () => {
         </section>
 
         {/* Stats Slide */}
-        <section className="h-screen w-full snap-start flex flex-col items-center justify-center p-8 bg-[#111]">
+        <section className="h-screen w-full snap-start flex flex-col items-center justify-center p-8 bg-[#0a0a0a]">
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 1 }}

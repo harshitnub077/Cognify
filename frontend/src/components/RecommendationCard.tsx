@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
-import { IconBrandYoutube, IconBrandInstagram, IconWorld, IconBookmark, IconBookmarkFilled } from '@tabler/icons-react';
+import { motion } from 'framer-motion';
+import { IconBrandYoutube, IconBrandInstagram, IconWorld, IconBookmark, IconBookmarkFilled, IconLoader2 } from '@tabler/icons-react';
 import { useAddBookmark, useRemoveBookmark } from '../hooks/useDashboardData';
 import { cn } from '../lib/utils';
 
-const scoreColor = (score: number) => {
-  return 'text-white bg-[#111] border border-[#222]';
-};
-
 const PlatformIcon = ({ platform }: { platform: string }) => {
-  if (platform === 'youtube') return <IconBrandYoutube size={14} className="text-slate-300" />;
-  if (platform === 'instagram') return <IconBrandInstagram size={14} className="text-slate-300" />;
-  return <IconWorld size={14} className="text-slate-300" />;
+  if (platform === 'youtube') return <IconBrandYoutube size={12} />;
+  if (platform === 'instagram') return <IconBrandInstagram size={12} />;
+  return <IconWorld size={12} />;
 };
 
 export const RecommendationCard = ({ item, isBookmarked: initialBookmarked = false }: any) => {
   const [isBookmarked, setIsBookmarked] = useState(initialBookmarked);
+  const [isHovered, setIsHovered] = useState(false);
   const addBookmark = useAddBookmark();
   const removeBookmark = useRemoveBookmark();
 
@@ -30,44 +28,67 @@ export const RecommendationCard = ({ item, isBookmarked: initialBookmarked = fal
     }
   };
 
+  const isPending = addBookmark.isPending || removeBookmark.isPending;
+
   return (
-    <div
+    <motion.div
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
       onClick={() => { if (item.url) window.open(item.url, '_blank'); }}
-      className="group flex flex-col w-full rounded-lg overflow-hidden cursor-pointer border border-[#1a1a1a] bg-[#0a0a0a] hover:border-[#333] transition-colors"
+      className="group flex flex-col w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg overflow-hidden cursor-pointer hover:border-[#333] transition-colors"
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-[#111] border-b border-[#1a1a1a]">
+      <div className="relative aspect-video w-full bg-[#111] overflow-hidden border-b border-[#1a1a1a]">
         <img
           src={item.thumbnail}
           alt={item.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300"
           loading="lazy"
         />
-        <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-          <div className="px-2 py-1 rounded text-[10px] font-medium bg-black/80 text-white border border-[#222]">
-            {item.score}% Match
+        
+        {/* Top Badges */}
+        <div className="absolute top-3 left-3 flex justify-between items-start right-3 z-10">
+          <div className="px-2 py-0.5 rounded bg-[#111] border border-[#222] text-[10px] font-bold tracking-widest text-slate-300 uppercase shadow-sm">
+            {item.score}% Align
           </div>
+          
           <button
             onClick={handleBookmark}
+            disabled={isPending}
             aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-            className="p-1.5 rounded bg-black/80 text-slate-400 hover:text-white border border-[#222] transition-colors"
+            className={cn(
+              "p-1.5 rounded bg-[#111] border border-[#222] shadow-sm transition-all",
+              isBookmarked 
+                ? "text-white border-[#333]" 
+                : "text-slate-400 hover:text-white"
+            )}
           >
-            {isBookmarked
-              ? <IconBookmarkFilled size={14} className="text-white" />
-              : <IconBookmark size={14} />}
+            {isPending ? (
+              <IconLoader2 size={12} className="animate-spin" />
+            ) : isBookmarked ? (
+              <IconBookmarkFilled size={12} className="text-white" />
+            ) : (
+              <IconBookmark size={12} />
+            )}
           </button>
         </div>
       </div>
 
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex items-center gap-2 mb-2">
-          <PlatformIcon platform={item.platform} />
-          <span className="text-[10px] font-medium text-slate-500 truncate">{item.channel || 'Unknown Channel'}</span>
+      <div className="p-4 flex flex-col flex-1 justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-5 h-5 rounded bg-[#111] border border-[#222] flex items-center justify-center text-slate-400">
+              <PlatformIcon platform={item.platform} />
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest truncate">
+              {item.channel || 'Source'}
+            </span>
+          </div>
+          
+          <h4 className="text-sm font-medium leading-snug line-clamp-2 text-white group-hover:text-slate-200 transition-colors">
+            {item.title || 'Untitled Extract'}
+          </h4>
         </div>
-        
-        <h4 className="text-sm font-medium leading-snug line-clamp-2 text-white group-hover:text-slate-300 transition-colors">
-          {item.title}
-        </h4>
       </div>
-    </div>
+    </motion.div>
   );
 };

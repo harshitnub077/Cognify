@@ -29,11 +29,15 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
       return res.status(401).json({ error: 'No authorization header' });
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace('Bearer ', '').trim();
+    if (!token || token === 'null' || token === 'undefined') {
+      return res.status(401).json({ error: 'Invalid or missing token format' });
+    }
+
     const { data: { user }, error } = await getSupabase().auth.getUser(token);
 
     if (error || !user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+      console.log('Auth Error:', error); return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
     req.user = user;

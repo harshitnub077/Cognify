@@ -3,20 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="sidebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="sidebar-container slide-in">
         <header>
-            <div class="logo">Cognify</div>
+            <div class="logo">
+                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                  <rect x="4" y="4" width="32" height="32" rx="6" stroke="currentColor" stroke-width="3" />
+                  <path d="M24 16L16 24M16 16L24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+                </svg>
+                Cognify
+            </div>
         </header>
 
         <div id="loading" class="hidden stagger-1">
             <div class="spinner"></div>
-            <p>Analyzing content...</p>
+            <p>Extracting cognitive data...</p>
         </div>
 
         <div id="no-content" class="stagger-1">
-            <p>No content currently selected for analysis.</p>
+            <p>No viable data stream detected.</p>
         </div>
 
         <div id="analysis-view" class="hidden">
@@ -29,7 +36,9 @@
 
             <!-- AI Verdict (Chat Bubble) -->
             <div class="verdict-bubble stagger-2">
-                <div class="avatar">C</div>
+                <div class="avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
+                </div>
                 <div class="bubble">
                     <p id="verdict-text">Recommendation summary...</p>
                 </div>
@@ -39,7 +48,7 @@
             <div class="metrics-grid stagger-3">
                 <!-- Goal Alignment Ring -->
                 <div class="card ring-card">
-                    <h4>Goal Match</h4>
+                    <h4>Neural Alignment</h4>
                     <div class="svg-container">
                         <svg viewBox="0 0 36 36" class="circular-chart">
                             <path class="circle-bg"
@@ -56,7 +65,7 @@
 
                 <!-- Toxicity Gauge -->
                 <div class="card ring-card">
-                    <h4>Toxicity</h4>
+                    <h4>Cognitive Hazard</h4>
                     <div class="svg-container">
                         <!-- pi * r = 3.14 * 15.9 = ~50 circumference for half circle -->
                         <svg viewBox="0 0 36 24" class="gauge-chart">
@@ -75,7 +84,7 @@
 
             <!-- Emotion Breakdown -->
             <div class="card stagger-4">
-                <h4>Emotion Profile</h4>
+                <h4>Psychographic Profile</h4>
                 <div id="emotion-bars" class="emotion-container">
                     <!-- Bars injected by JS -->
                 </div>
@@ -84,14 +93,14 @@
             <!-- Actions -->
             <div class="actions stagger-5">
                 <button id="find-better-btn" class="primary-btn">
-                    <span id="find-btn-text">Find better content</span>
+                    <span id="find-btn-text">Inject Superior Content</span>
                     <div id="find-btn-spinner" class="btn-spinner hidden"></div>
                 </button>
             </div>
 
             <!-- Recommendations -->
             <div id="recommendations" class="hidden">
-                <h4 style="margin: 24px 0 12px 0; font-size: 14px; color: #A7A9BE; text-transform: uppercase;">Recommended for You</h4>
+                <h4 style="margin: 24px 0 12px 0; font-size: 14px; color: #A1A1AA; text-transform: uppercase; font-family: 'Geist', sans-serif; letter-spacing: 0.05em; font-weight: 600;">High-Value Alternatives</h4>
                 <div id="recs-list"></div>
             </div>
         </div>

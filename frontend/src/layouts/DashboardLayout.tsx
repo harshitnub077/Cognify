@@ -73,19 +73,19 @@ export const DashboardLayout = () => {
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <aside className={cn(
-      'flex flex-col h-full bg-white dark:bg-black',
+      'flex flex-col h-full bg-white dark:bg-[#0a0a0a]',
       mobile
         ? 'w-full'
-        : 'w-[232px] border-r border-slate-200 dark:border-surface-border'
+        : 'w-[232px] border-r border-slate-200 dark:border-[#1a1a1a]'
     )}>
       {/* Logo */}
-      <div className={cn('flex items-center gap-2.5 px-5 h-[60px] border-b border-slate-200 dark:border-surface-border shrink-0', mobile && 'justify-between')}>
+      <div className={cn('flex items-center gap-2.5 px-5 h-[60px] border-b border-slate-200 dark:border-[#1a1a1a] shrink-0', mobile && 'justify-between')}>
         <div className="flex items-center gap-2.5">
           <Logo className="w-7 h-7" />
           <span className="font-display font-bold text-lg tracking-tight">Cognify</span>
         </div>
         {mobile && (
-          <button onClick={() => setMobileOpen(false)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-surface-hover">
+          <button onClick={() => setMobileOpen(false)} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222]">
             <IconX size={20} />
           </button>
         )}
@@ -102,8 +102,8 @@ export const DashboardLayout = () => {
             className={({ isActive }) => cn(
               'relative flex items-center gap-3 px-4 h-10 rounded-lg text-sm font-medium transition-all duration-200 group outline-none w-full',
               isActive
-                ? 'text-primary bg-surface-hover'
-                : 'text-surface-muted hover:text-primary hover:bg-surface-hover/50'
+                ? 'text-white bg-[#222]'
+                : 'text-surface-muted hover:text-white hover:bg-[#222]/50'
             )}
           >
             {({ isActive }) => (
@@ -114,7 +114,7 @@ export const DashboardLayout = () => {
                   <span className={cn(
                     'h-5 px-1.5 inline-flex items-center justify-center text-[10px] font-bold rounded border',
                     isActive
-                      ? 'border-surface-border text-primary'
+                      ? 'border-[#1a1a1a] text-white'
                       : 'border-transparent text-surface-muted'
                   )}>
                     {link.badge}
@@ -131,9 +131,9 @@ export const DashboardLayout = () => {
         <div className="px-5 pb-3">
           <div className="flex justify-between items-center mb-1.5 text-xs font-medium">
             <span className="text-slate-500 dark:text-surface-muted">Level {achievementData.level || 1}</span>
-            <span className="text-primary font-bold">{achievementData.totalXP || 0} XP</span>
+            <span className="text-white font-bold">{achievementData.totalXP || 0} XP</span>
           </div>
-          <div className="w-full h-1 bg-slate-100 dark:bg-surface-hover rounded-full overflow-hidden">
+          <div className="w-full h-1 bg-slate-100 dark:bg-[#222] rounded-full overflow-hidden">
             <div
               className="h-full bg-primary rounded-full transition-all duration-700"
               style={{ width: `${((achievementData.totalXP || 0) % 100)}%` }}
@@ -143,13 +143,13 @@ export const DashboardLayout = () => {
       )}
 
       {/* User */}
-      <div className="p-3 border-t border-slate-200 dark:border-surface-border shrink-0">
+      <div className="p-3 border-t border-slate-200 dark:border-[#1a1a1a] shrink-0">
         <div ref={mobile ? undefined : userMenuRef} className="relative mt-2">
           <button
             onClick={() => setShowUserMenu(v => !v)}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-surface-hover transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[#222] transition-colors"
           >
-            <div className="w-6 h-6 rounded-md bg-primary text-primary-fg flex items-center justify-center font-bold text-xs shrink-0 uppercase">
+            <div className="w-6 h-6 rounded-md bg-primary text-white-fg flex items-center justify-center font-bold text-xs shrink-0 uppercase">
               {firstName.charAt(0)}
             </div>
             <div className="flex-1 text-left min-w-0">
@@ -166,7 +166,7 @@ export const DashboardLayout = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.97 }}
                 transition={{ duration: 0.15 }}
-                className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-surface-card border border-slate-200 dark:border-surface-border rounded-xl shadow-xl py-1.5 z-50"
+                className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-[#1a1a1a] rounded-xl shadow-xl py-1.5 z-50"
               >
                 <button
                   onClick={() => signOut()}
@@ -184,7 +184,7 @@ export const DashboardLayout = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-[#080808] text-slate-900 dark:text-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white font-sans overflow-hidden">
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex h-full shrink-0">
@@ -216,14 +216,14 @@ export const DashboardLayout = () => {
       </AnimatePresence>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
 
         {/* Top bar */}
-        <header className="h-[60px] flex items-center gap-4 px-4 lg:px-6 border-b border-slate-200 dark:border-surface-border bg-white dark:bg-black shrink-0 z-30">
+        <header className="absolute top-0 left-0 right-0 h-[60px] flex items-center gap-4 px-4 lg:px-6 border-b border-slate-200/50 dark:border-white/5 bg-white/70 dark:bg-[#0a0a0a]/70 backdrop-blur-xl z-30">
           {/* Hamburger */}
           <button
             onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-surface-hover transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#222] transition-colors"
           >
             <IconMenu2 size={20} />
           </button>
@@ -241,10 +241,9 @@ export const DashboardLayout = () => {
             </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle />
+          <div className="flex items-center gap-2">
             <button
-              className="relative flex items-center justify-center w-10 h-10 rounded-lg text-surface-muted hover:text-primary hover:bg-surface-hover transition-colors"
+              className="relative flex items-center justify-center w-10 h-10 rounded-lg text-surface-muted hover:text-white hover:bg-[#222] transition-colors"
               aria-label="Notifications"
             >
               <IconBell size={20} />
@@ -254,8 +253,8 @@ export const DashboardLayout = () => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-[1200px] mx-auto w-full p-4 md:p-8 pb-24 lg:pb-8">
+        <main className="flex-1 overflow-y-auto pt-[60px]">
+          <div className="max-w-[1600px] mx-auto w-full p-4 md:p-8 pb-24 lg:pb-8">
             <PageTransition>
               <Outlet />
             </PageTransition>
@@ -264,7 +263,7 @@ export const DashboardLayout = () => {
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-black border-t border-slate-200 dark:border-surface-border z-50 flex items-center justify-around px-2">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-[#0a0a0a] border-t border-slate-200 dark:border-[#1a1a1a] z-50 flex items-center justify-around px-2">
         {MOBILE_NAV.map(link => (
           <NavLink
             key={link.id}
@@ -274,7 +273,7 @@ export const DashboardLayout = () => {
               'flex flex-col items-center justify-center gap-1 min-w-[56px] py-2 px-3 rounded-xl transition-colors',
               isActive
                 ? 'text-slate-900 dark:text-white'
-                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'
             )}
           >
             {({ isActive }) => (

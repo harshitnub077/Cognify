@@ -2,7 +2,7 @@ import axios from 'axios';
 import { supabase } from './supabase';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api', // adjust if needed based on env
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
 });
 
 // Interceptor to inject Supabase Auth Token

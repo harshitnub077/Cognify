@@ -29,11 +29,18 @@ const Mirror = () => {
   }, [timelineData]);
 
   const driftTrendData = useMemo(() => {
-    if (!timelineData || timelineData.length === 0) return [{ week: 'W1', score: 0 }];
-    return timelineData.slice(-6).map((item: any, i: number) => ({
-      week: `W${i + 1}`,
-      score: Math.round((item.averageScore || 0) * 100)
-    }));
+    if (!timelineData || timelineData.length === 0) return [{ date: 'Today', score: 0 }];
+    
+    // Fill the last 7 days including today
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = subDays(new Date(), 6 - i);
+      const key = format(d, 'yyyy-MM-dd');
+      const item = timelineData.find((t: any) => t.date === key);
+      return {
+        date: format(d, 'EEE'), // Mon, Tue, etc.
+        score: item ? Math.round((item.averageScore || 0) * 100) : 0
+      };
+    });
   }, [timelineData]);
 
   const radarData = useMemo(() => {
@@ -58,7 +65,7 @@ const Mirror = () => {
   }, [timelineData, stats]);
 
   const getHeatmapColor = (score: number | null) => {
-    if (score === null) return 'bg-[#111]';
+    if (score === null) return 'bg-[#0a0a0a]';
     if (score < 30) return 'bg-[#222]';
     if (score < 60) return 'bg-[#444]';
     if (score < 80) return 'bg-[#888]';
@@ -136,7 +143,7 @@ const Mirror = () => {
         </div>
         <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-5">
           <div className="text-xs font-medium text-slate-500 mb-2">Conscious Streak</div>
-          <div className="text-2xl font-semibold text-white">{stats?.stats?.streakDays || 0} <span className="text-sm font-normal text-slate-500 ml-1">days</span></div>
+          <div className="text-2xl font-semibold text-white">{stats?.stats?.streak || 0} <span className="text-sm font-normal text-slate-500 ml-1">days</span></div>
         </div>
       </div>
 
@@ -152,7 +159,7 @@ const Mirror = () => {
                 {driftScore > 0 ? '+' : ''}{Math.round(driftScore)}
               </div>
               <div>
-                <div className="text-sm font-medium text-slate-300 mb-0.5 capitalize">
+                <div className="text-sm font-medium text-white mb-0.5 capitalize">
                   {driftTrend}
                 </div>
                 <p className="text-xs text-slate-500">Current trajectory.</p>
@@ -170,7 +177,7 @@ const Mirror = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1a1a1a" />
-                <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#666' }} axisLine={false} tickLine={false} dy={5} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#666' }} axisLine={false} tickLine={false} dy={5} />
                 <YAxis tick={{ fontSize: 11, fill: '#666' }} axisLine={false} tickLine={false} domain={['dataMin - 10', 'dataMax + 10']} />
                 <RechartsTooltip 
                   contentStyle={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '4px', fontSize: '12px', color: '#fff' }}

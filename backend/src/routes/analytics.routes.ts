@@ -16,14 +16,14 @@ router.get('/emotion-timeline', requireAuth, async (req: AuthRequest, res) => {
     try {
         const userId = req.user.id;
         
-        // Date 30 days ago
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        // Date 365 days ago for full heatmap history
+        const yearAgo = new Date();
+        yearAgo.setDate(yearAgo.getDate() - 365);
 
         const logs = await prisma.contentLog.findMany({
             where: {
                 userId,
-                createdAt: { gte: thirtyDaysAgo.toISOString() }
+                createdAt: { gte: yearAgo.toISOString() }
             },
             select: {
                 createdAt: true,
@@ -79,51 +79,48 @@ router.get('/drift-score', requireAuth, async (req: AuthRequest, res) => {
     try {
         const userId = req.user.id;
         
-        // Return the most recent stored drift score
-        const lastScore = await prisma.driftScore.findFirst({
-            where: { userId },
-            orderBy: { date: 'desc' }
+        // Live Dynamic Drift Score Calculation
+        const now = new Date();
+        const sevenDaysAgo = new Date(now);
+        sevenDaysAgo.setDate(now.getDate() - 7);
+        const fourteenDaysAgo = new Date(now);
+        fourteenDaysAgo.setDate(now.getDate() - 14);
+
+        const currentWeekLogs = await prisma.contentLog.findMany({
+            where: { userId, createdAt: { gte: sevenDaysAgo } },
+            select: { score: true }
         });
 
-        if (lastScore) {
-            return res.json({ 
-                success: true, 
-                score: lastScore.score, 
-                trend: lastScore.trend || 'stable',
-                data: lastScore
-            });
+        const prevWeekLogs = await prisma.contentLog.findMany({
+            where: { userId, createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo } },
+            select: { score: true }
+        });
+
+        const currentAvg = currentWeekLogs.length > 0 
+            ? currentWeekLogs.reduce((acc, l) => acc + l.score, 0) / currentWeekLogs.length 
+            : 0;
+            
+        const prevAvg = prevWeekLogs.length > 0 
+            ? prevWeekLogs.reduce((acc, l) => acc + l.score, 0) / prevWeekLogs.length 
+            : 0;
+
+        let calculatedScore = currentAvg - prevAvg;
+        let trend = 'stable';
+        if (calculatedScore > 5) trend = 'improving';
+        else if (calculatedScore < -5) trend = 'drifting';
+        
+        // If there's no data at all, return 0 stable
+        if (currentWeekLogs.length === 0 && prevWeekLogs.length === 0) {
+            calculatedScore = 0;
+            trend = 'stable';
         }
 
-        // If no score yet, try NLP service
-        try {
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-            const recentLogs = await prisma.contentLog.findMany({
-                where: { userId, createdAt: { gte: sevenDaysAgo } },
-                select: { isConscious: true, score: true, tags: true }
-            });
-
-            const response = await axios.post('http://localhost:8001/drift/calculate', {
-                user_id: userId,
-                content_logs: recentLogs
-            }, { timeout: 5000 });
-            const driftData = response.data;
-
-            const newDriftScore = await prisma.driftScore.create({
-                data: {
-                    userId,
-                    score: driftData.drift_score,
-                    factors: driftData.breakdown,
-                    trend: 'stable'
-                }
-            });
-
-            return res.json({ success: true, score: newDriftScore.score, trend: 'stable', data: newDriftScore });
-        } catch (nlpError) {
-            // NLP unavailable — return 0 as default
-            return res.json({ success: true, score: 0, trend: 'stable', data: null });
-        }
+        return res.json({ 
+            success: true, 
+            score: Math.round(calculatedScore), 
+            trend, 
+            data: { score: calculatedScore, trend } 
+        });
     } catch (error) {
         console.error('Error calculating drift score:', error);
         res.status(500).json({ success: false, error: 'Failed to calculate drift score' });

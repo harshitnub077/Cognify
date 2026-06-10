@@ -54,8 +54,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <img src="${rec.thumb}" class="rec-thumb" />
                     <div class="rec-info">
                         <p class="rec-title">${rec.title}</p>
-                        <p class="rec-meta">${rec.match}% Goal Match</p>
-                        <button class="rec-btn">Watch instead</button>
+                        <p class="rec-meta">${rec.match}% Synced</p>
+                        <button class="rec-btn">Override Stream</button>
                     </div>
                 `;
                 recsList.appendChild(card);
@@ -77,8 +77,8 @@ function renderAnalysis(data) {
 
     // Verdict
     document.getElementById('verdict-text').innerText = data.recommendation === 'consume' 
-        ? "This content aligns well with your goals and is safe to consume."
-        : "You might want to skip this. It scores low on your personal goals or contains high toxicity.";
+        ? "Content parameters optimal. Safe for cognitive ingestion."
+        : "WARNING: High irrelevance detected. Proceeding may result in cognitive degradation.";
 
     // Alignment Ring (circumference = 100)
     const score = data.score || (data.goal_alignment && data.goal_alignment.score ? Math.round(data.goal_alignment.score * 100) : 0);

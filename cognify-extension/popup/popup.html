@@ -4,43 +4,48 @@
   <meta charset="UTF-8">
   <title>Cognify Extension</title>
   <link rel="stylesheet" href="popup.css">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="header">
     <div class="brand">
-      <div class="logo"></div>
+      <div class="logo">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+          <rect x="4" y="4" width="32" height="32" rx="6" stroke="currentColor" stroke-width="3" />
+          <path d="M24 16L16 24M16 16L24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        </svg>
+      </div>
       <h1>Cognify</h1>
     </div>
     <div id="status-dot" class="status-dot"></div>
   </div>
 
   <div class="main-content" id="login-view">
-    <p class="subtitle">Please login to the web dashboard first.</p>
+    <p class="subtitle">Neural link severed. Login to dashboard.</p>
     <button id="login-btn" class="btn">Open Dashboard</button>
   </div>
 
   <div class="main-content hidden" id="active-view">
     <div class="stat-row">
       <div class="stat-card">
-        <span class="stat-label">Conscious</span>
+        <span class="stat-label">Cognitive State</span>
         <span class="stat-value" id="conscious-count">0</span>
       </div>
       <div class="stat-card">
-        <span class="stat-label">Avg Match</span>
+        <span class="stat-label">Alignment</span>
         <span class="stat-value" id="avg-match">0%</span>
       </div>
     </div>
     
     <div class="current-site">
       <div class="site-header">
-        <span class="site-title">Current Target</span>
+        <span class="site-title">Active Stream</span>
       </div>
-      <p class="site-name" id="site-name">Inactive</p>
-      <p class="site-desc" id="site-desc">Navigate to YouTube or Instagram</p>
+      <p class="site-name" id="site-name">Dormant</p>
+      <p class="site-desc" id="site-desc">Awaiting sensory input...</p>
     </div>
   </div>
 
-  <script src="popup.js"></script>
+  <script type="module" src="popup.js"></script>
 </body>
 </html>

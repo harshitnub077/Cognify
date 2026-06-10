@@ -7,7 +7,7 @@ import {
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
-import { useDashboardStats, useWeeklyReport, useContentHistory, useRecommendations } from '../hooks/useDashboardData';
+import { useDashboardStats, useWeeklyReport, useContentHistory, useRecommendations, useDriftScore, useUserProfile } from '../hooks/useDashboardData';
 import { Skeleton } from '../components/Skeleton';
 import { RecommendationCard } from '../components/RecommendationCard';
 import { cn } from '../lib/utils';
@@ -16,22 +16,27 @@ import { format, subDays, isSameDay } from 'date-fns';
 
 const Dashboard = () => {
   const { data: dashboardData, isLoading } = useDashboardStats();
+  const { data: userProfile } = useUserProfile();
   const { data: weeklyReport } = useWeeklyReport();
   const { data: historyData } = useContentHistory({ limit: 100 });
+  const { data: driftData } = useDriftScore();
   const [url, setUrl] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   const stats = dashboardData?.stats;
+  const driftScore = driftData?.score || 0;
   
-  // Use profile identities (goal) to fetch recommendations
-  const primaryGoal = dashboardData?.profile?.identities?.length > 0
-    ? dashboardData.profile.identities.join(' ')
+  // Use profile identities (goal) to fetch recommendations - merge from both hooks to guarantee freshness
+  const profileToUse = userProfile || dashboardData?.profile;
+  
+  const primaryGoal = profileToUse?.identities?.length > 0
+    ? profileToUse.identities.join(' ')
     : "I want to improve my focus and learn new things.";
     
-  // Fetch 12 to share the exact same React Query cache as Goals.tsx
-  const { data: recData } = useRecommendations(primaryGoal, 12);
-  const recommendations = (recData || []).slice(0, 4);
+  // Fetch 24 to share the exact same React Query cache as Goals.tsx
+  const { data: recData } = useRecommendations(primaryGoal, 24);
+  const recommendations = (recData || []).slice(0, 8);
   
   const logs = historyData?.data || [];
 
@@ -131,12 +136,12 @@ const Dashboard = () => {
       <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-[#1a1a1a] pb-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded bg-[#111] text-white border border-[#222]">
-              <IconActivity size={16} />
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white text-black shadow-lg shadow-white/10">
+              <IconActivity size={20} />
             </div>
-            <h1 className="text-2xl font-sans font-semibold tracking-tight text-white">Overview</h1>
+            <h1 className="text-3xl font-display font-bold tracking-tight text-white">Overview</h1>
           </div>
-          <p className="text-sm text-slate-500 max-w-xl font-medium">
+          <p className="text-sm text-surface-muted max-w-xl font-medium">
             Your daily cognitive audit. Track your focus, analyze content, and stay strictly aligned with your goals.
           </p>
         </div>
@@ -150,12 +155,12 @@ const Dashboard = () => {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Scan URL for alignment..."
-            className="w-full bg-[#0a0a0a] border border-[#222] hover:border-[#333] focus:border-white rounded-md pl-10 pr-24 py-2.5 text-sm font-medium focus:outline-none focus:ring-0 transition-colors text-white placeholder:text-slate-600"
+            className="w-full bg-[#111] border border-[#222] hover:border-[#333] focus:border-white focus:bg-[#151515] rounded-xl pl-10 pr-24 py-2.5 text-[15px] font-medium outline-none transition-all text-white placeholder:text-slate-500 shadow-inner"
           />
           <button
             type="submit"
             disabled={analyzing || !url.trim()}
-            className="absolute right-1 top-1 bottom-1 bg-[#111] hover:bg-[#222] border border-[#333] text-white rounded px-4 text-xs font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            className="absolute right-1.5 top-1.5 bottom-1.5 bg-white text-black hover:bg-slate-200 border-none rounded-lg px-4 text-[13px] font-bold transition-all disabled:opacity-50 disabled:bg-[#222] disabled:text-slate-500 flex items-center gap-1.5 shadow-sm"
           >
             {analyzing ? <IconLoader2 size={14} className="animate-spin" /> : 'Scan'}
           </button>
@@ -171,28 +176,28 @@ const Dashboard = () => {
             exit={{ opacity: 0, y: -10, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="card p-8 bg-[#0a0a0a] border border-[#1a1a1a] flex flex-col md:flex-row gap-8 items-start">
+            <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-8 flex flex-col md:flex-row gap-8 items-start">
               <img
                 src={analysisResult.thumbnail}
                 alt="Thumbnail"
-                className="w-full md:w-48 rounded-md object-cover bg-[#111] border border-[#222] aspect-video"
+                className="w-full md:w-48 rounded-md object-cover bg-[#0a0a0a] border border-[#1a1a1a] aspect-video"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="badge bg-[#111] text-white border border-[#333]">{analysisResult.score}% Aligned</span>
-                  <span className="badge bg-[#111] text-slate-400 border border-[#222]">{analysisResult.dominantEmotion}</span>
+                  <span className="badge bg-[#0a0a0a] text-white border border-[#1a1a1a]">{analysisResult.score}% Aligned</span>
+                  <span className="badge bg-[#0a0a0a] text-slate-400 border border-[#1a1a1a]">{analysisResult.dominantEmotion}</span>
                 </div>
                 <h3 className="text-lg font-medium mb-3 leading-snug text-white">{analysisResult.title}</h3>
                 <p className="text-sm text-slate-400 leading-relaxed mb-6">{analysisResult.summary}</p>
                 
                 {analysisResult.verdict === 'caution' && (
-                  <div className="p-4 bg-[#111] rounded-md flex items-start gap-3 border border-red-500/20">
+                  <div className="p-4 bg-[#0a0a0a] rounded-md flex items-start gap-3 border border-red-500/20">
                     <IconInfoCircle className="text-red-500 mt-0.5 shrink-0" size={16} />
                     <p className="text-xs text-red-400 font-medium">{analysisResult.reason}</p>
                   </div>
                 )}
               </div>
-              <button onClick={() => setAnalysisResult(null)} className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-[#111] text-slate-500 hover:text-white transition-colors">
+              <button onClick={() => setAnalysisResult(null)} className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-[#0a0a0a] text-slate-500 hover:text-white transition-colors">
                 <IconX size={16} />
               </button>
             </div>
@@ -200,43 +205,44 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* 2. Daily Audit & Target Focus */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* BENTO GRID LAYOUT */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
         {/* Left: Active Target Goal Billboard */}
-        <div className="card p-8 bg-[#0a0a0a] border border-[#1a1a1a] flex flex-col justify-between text-white relative overflow-hidden group">
-          <div className="absolute top-1/2 -translate-y-1/2 right-0 p-6 opacity-[0.03] pointer-events-none group-hover:scale-[1.3] transition-transform duration-1000">
-            <IconTarget size={200} />
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-8 lg:col-span-2 flex flex-col justify-between text-white relative overflow-hidden group">
+          <div className="absolute top-1/2 -translate-y-1/2 -right-20 opacity-[0.03] pointer-events-none group-hover:scale-[1.1] transition-transform duration-1000">
+            <IconTarget size={400} stroke={2.5} />
           </div>
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#111] text-slate-300 text-xs font-medium border border-[#222] mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#111] text-white text-xs font-medium border border-[#222] shadow-sm mb-8">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
               Active Target Goal
             </div>
-            <h2 className="font-sans text-3xl font-semibold leading-tight mb-4 tracking-tight">
-              {primaryGoal.charAt(0).toUpperCase() + primaryGoal.slice(1)}
+            <h2 className="font-display text-4xl font-bold leading-tight mb-4 tracking-tight drop-shadow-sm capitalize">
+              {primaryGoal}
             </h2>
             <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
-              Cognify is actively analyzing and filtering your feed to enforce this specific identity.
+              Cognify is actively analyzing and filtering your feed to enforce your goals: <span className="text-slate-300 font-medium">{primaryGoal}</span>.
             </p>
           </div>
         </div>
 
         {/* Right: The Daily AI Audit */}
-        <div className="card p-8 lg:col-span-2 flex flex-col justify-between border border-[#1a1a1a] bg-[#0a0a0a]">
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-8 lg:col-span-2 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded bg-[#111] border border-[#222] flex items-center justify-center text-white">
+              <div className="w-8 h-8 rounded bg-[#0a0a0a] border border-[#1a1a1a] flex items-center justify-center text-white">
                 <IconBrain size={16} />
               </div>
               <h3 className="font-sans font-medium text-sm text-white">Daily Audit</h3>
             </div>
-            <span className="text-xs font-medium text-slate-500 bg-[#111] px-3 py-1.5 rounded-md border border-[#222]">
+            <span className="text-xs font-medium text-slate-500 bg-[#0a0a0a] px-3 py-1.5 rounded-md border border-[#1a1a1a]">
               {format(new Date(), 'MMM do')}
             </span>
           </div>
           
           <div className="flex-1 flex items-center mb-6">
-            <p className="text-lg font-medium text-slate-300 leading-relaxed">
+            <p className="text-lg font-medium text-white leading-relaxed">
               {dailySummary.strictMessage}
             </p>
           </div>
@@ -256,10 +262,8 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </section>
 
-      {/* 3. Top KPIs */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Top KPIs */}
         <KpiCard
           icon={<IconTarget />}
           label="Goal Alignment"
@@ -277,25 +281,23 @@ const Dashboard = () => {
         <KpiCard
           icon={<IconActivity />}
           label="Recent Drift"
-          value={stats?.driftScore > 0 ? `+${stats?.driftScore}` : `${stats?.driftScore || 0}`}
+          value={driftScore > 0 ? `+${driftScore}` : `${driftScore}`}
           subtext="Identity alignment"
-          trend={stats?.driftScore >= 0 ? 'up' : 'down'}
-          color={stats?.driftScore >= 0 ? 'text-emerald-500' : 'text-red-500'}
+          trend={driftScore >= 0 ? 'up' : 'down'}
+          color={driftScore >= 0 ? 'text-emerald-500' : 'text-red-500'}
         />
         <KpiCard
           icon={<IconFlame className="text-orange-500" />}
           label="Focus Streak"
-          value={`${stats?.streakDays || 0}d`}
+          value={`${stats?.streak || 0}d`}
           subtext="Days above 60% align"
           trend="neutral"
         />
-      </section>
 
 
 
-      {/* 4. Professional Analytics Charts Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card p-8 bg-[#0a0a0a] border border-[#1a1a1a]">
+        {/* Professional Analytics Charts */}
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-8 lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-end mb-6">
             <div>
               <h3 className="text-xs font-medium text-slate-500 mb-1">Time Reclaimed</h3>
@@ -303,7 +305,7 @@ const Dashboard = () => {
                 {timeSavedData[6]?.saved || 0} <span className="text-sm text-slate-500 font-medium">mins</span>
               </div>
             </div>
-            <div className="text-[10px] font-medium text-slate-400 bg-[#111] px-2 py-1 rounded border border-[#222]">
+            <div className="text-[10px] font-medium text-slate-400 bg-[#0a0a0a] px-2 py-1 rounded border border-[#1a1a1a]">
               Assuming 12m/video
             </div>
           </div>
@@ -329,12 +331,12 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="card p-8 bg-[#0a0a0a] border border-[#1a1a1a]">
+        <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-8 lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-end mb-6">
             <div>
               <h3 className="text-xs font-medium text-slate-500 mb-1">Focus vs Distraction</h3>
-              <div className="text-3xl font-sans font-semibold text-white">
-                {stats?.consciousPercentage || 0}% <span className="text-sm text-slate-500 font-medium">Conscious</span>
+              <div className="text-4xl font-display font-bold text-white tracking-tight">
+                {stats?.consciousPercentage || 0}% <span className="text-sm text-surface-muted font-medium ml-1">Conscious</span>
               </div>
             </div>
           </div>
@@ -377,9 +379,9 @@ const Dashboard = () => {
             ))}
           </div>
         ) : (
-          <div className="card p-12 text-center flex flex-col items-center justify-center bg-[#0a0a0a] border border-[#1a1a1a]">
+          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-12 text-center flex flex-col items-center justify-center">
             <IconTarget size={40} className="mb-4 text-[#333]" />
-            <p className="font-medium mb-1 text-slate-300">Set your goals to get recommendations</p>
+            <p className="font-medium mb-1 text-white">Set your goals to get recommendations</p>
             <p className="text-xs text-slate-600">Cognify needs to know what you're working on.</p>
           </div>
         )}
@@ -389,7 +391,7 @@ const Dashboard = () => {
 };
 
 const KpiCard = ({ icon, label, value, subtext, trend }: any) => (
-  <div className="card p-6 bg-[#0a0a0a] border border-[#1a1a1a] flex flex-col justify-between hover:border-[#333] transition-colors group">
+  <motion.div whileHover={{ scale: 0.98 }} className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg-hover p-6 flex flex-col justify-between group">
     <div className="flex justify-between items-start mb-6">
       <div className="text-slate-400 group-hover:text-white transition-colors">{icon}</div>
       {trend !== 'neutral' && (
@@ -400,10 +402,10 @@ const KpiCard = ({ icon, label, value, subtext, trend }: any) => (
     </div>
     <div className="mt-auto">
       <h4 className="text-xs font-medium text-slate-500 mb-2">{label}</h4>
-      <div className="text-3xl font-sans font-semibold text-white tracking-tight mb-1">{value}</div>
-      <p className="text-xs text-slate-600 font-medium">{subtext}</p>
+      <div className="text-4xl font-display font-bold text-white tracking-tight mb-1">{value}</div>
+      <p className="text-xs text-surface-muted font-medium">{subtext}</p>
     </div>
-  </div>
+  </motion.div>
 );
 
 export default Dashboard;

@@ -6,6 +6,7 @@ import { DashboardLayout } from './layouts/DashboardLayout';
 import { useAuthStore } from './store/useAuthStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './components/ThemeProvider';
+import { ScrollToTop } from './components/ScrollToTop';
 
 // Code-split all page components with React.lazy
 const Home = React.lazy(() => import('./pages/Home'));
@@ -32,7 +33,7 @@ const queryClient = new QueryClient({
 
 const LoadingSpinner = () => (
   <div className="flex h-screen items-center justify-center bg-white dark:bg-black">
-    <div className="w-7 h-7 border-2 border-slate-200 dark:border-surface-border border-t-primary rounded-full animate-spin" />
+    <div className="w-7 h-7 border-2 border-slate-200 dark:border-[#1a1a1a] border-t-primary rounded-full animate-spin" />
   </div>
 );
 
@@ -106,6 +107,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToTop />
         <Toaster 
           position="top-center"
           toastOptions={{

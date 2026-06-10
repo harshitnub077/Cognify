@@ -71,25 +71,27 @@ router.post('/analyze', requireAuth, analyzeRateLimiter, async (req: AuthRequest
         return res.status(400).json({ success: false, error: 'Valid URL is required' });
     }
 
-    // Cache Check: Did this user analyze this exact URL in the last 24h?
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // Fetch user goals — schema uses identities[] (from Dashboard Goals.tsx)
+    const profile = await prisma.userProfile.findUnique({ where: { userId } });
+    const userGoals = (profile as any)?.identities?.length > 0
+        ? (profile as any).identities
+        : ((profile as any)?.focusAreas?.length > 0 ? (profile as any).focusAreas : ['Focused Developer']);
+
+    // Cache Check: To prevent spamming the NLP service for the exact same URL repeatedly by the extension
+    // Reduced to 5 seconds so changing goals updates insight immediately.
+    const validCacheTime = new Date(Date.now() - 5 * 1000);
+
     const existingLog = await prisma.contentLog.findFirst({
         where: {
             userId,
             url,
-            createdAt: { gte: yesterday }
+            createdAt: { gte: validCacheTime }
         }
     });
 
     if (existingLog) {
         return res.json({ success: true, data: existingLog });
     }
-
-    // Fetch user goals — schema uses identities[] (from Dashboard Goals.tsx)
-    const profile = await prisma.userProfile.findUnique({ where: { userId } });
-    const userGoals = (profile as any)?.identities?.length > 0
-        ? (profile as any).identities
-        : ((profile as any)?.focusAreas?.length > 0 ? (profile as any).focusAreas : ['Focused Developer']);
 
     // Call NLP Microservice
     let nlpResponse: any;

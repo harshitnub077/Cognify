@@ -84,11 +84,11 @@ const Onboarding = () => {
             <Logo className="w-10 h-10" />
           </div>
 
-          <div className="card p-6 sm:p-10 min-h-[480px] flex flex-col relative overflow-hidden">
+          <div className="bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg p-6 sm:p-10 min-h-[480px] flex flex-col relative overflow-hidden">
             {/* Progress dots */}
             <div className="flex justify-center gap-2 mb-8">
               {[1, 2, 3].map(i => (
-                <div key={i} className={cn("w-2 h-2 rounded-full transition-colors", step >= i ? "bg-primary" : "bg-slate-200 dark:bg-surface-border")} />
+                <div key={i} className={cn("w-2 h-2 rounded-full transition-colors", step >= i ? "bg-primary" : "bg-slate-200 dark:bg-[#1a1a1a]")} />
               ))}
             </div>
 
@@ -170,7 +170,7 @@ const Chip = ({ active, onClick, children }: { active: boolean, onClick: () => v
       "px-4 py-2.5 rounded-xl border text-sm font-medium transition-all text-left",
       active
         ? "bg-slate-900 dark:bg-white text-white dark:text-black border-transparent shadow-sm"
-        : "bg-slate-50 dark:bg-surface-hover border-slate-200 dark:border-surface-border text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-[#444]"
+        : "bg-slate-50 dark:bg-[#222] border-slate-200 dark:border-[#1a1a1a] text-slate-700 dark:text-white hover:border-slate-300 dark:hover:border-[#333]"
     )}
   >
     {children}
