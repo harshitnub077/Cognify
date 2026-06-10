@@ -132,7 +132,7 @@ const Home = () => {
             initial="hidden"
             animate="visible"
             transition={{ duration: 1.2, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="font-display text-5xl md:text-[84px] font-bold tracking-tight leading-[1.05] mb-8 text-white drop-shadow-2xl"
+            className="font-display text-4xl md:text-6xl font-bold tracking-tight leading-[1.05] mb-8 text-white drop-shadow-2xl"
           >
             Reclaim your mind from <br className="hidden md:block" />
             <span className="tracking-tighter font-medium text-transparent bg-clip-text bg-gradient-to-r from-slate-300 to-slate-600">
@@ -145,7 +145,7 @@ const Home = () => {
             initial="hidden"
             animate="visible"
             transition={{ duration: 1.2, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="text-lg md:text-xl text-slate-400/90 max-w-2xl mx-auto mb-14 leading-[1.8] font-medium tracking-wide"
+            className="text-base md:text-lg text-slate-400/90 max-w-2xl mx-auto mb-14 leading-[1.8] font-medium tracking-wide"
           >
             You are wasting countless minutes on videos that do not align with your goals. Cognify is a strict extension that forces you to confront the reality of your consumption.
           </motion.p>
@@ -311,7 +311,7 @@ const PremiumCard = ({ icon: Icon, title, description, className, children, glow
         <Icon size={24} stroke={1.5} />
       </div>
       <div className="relative z-10 mt-auto">
-        <h3 className="font-display text-2xl font-bold text-white mb-2 tracking-tight drop-shadow-sm">{title}</h3>
+        <h3 className="font-display text-xl font-bold text-white mb-2 tracking-tight drop-shadow-sm">{title}</h3>
         <p className="text-slate-400 leading-relaxed font-medium text-sm max-w-md">{description}</p>
       </div>
     </div>
