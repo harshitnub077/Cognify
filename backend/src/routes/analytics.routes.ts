@@ -23,7 +23,7 @@ router.get('/emotion-timeline', requireAuth, async (req: AuthRequest, res) => {
         const logs = await prisma.contentLog.findMany({
             where: {
                 userId,
-                createdAt: { gte: yearAgo.toISOString() }
+                createdAt: { gte: yearAgo }
             },
             select: {
                 createdAt: true,
@@ -42,6 +42,7 @@ router.get('/emotion-timeline', requireAuth, async (req: AuthRequest, res) => {
                 dailyStats[dateStr] = {
                     date: dateStr,
                     joy_sum: 0, anger_sum: 0, fear_sum: 0, sadness_sum: 0,
+                    surprise_sum: 0, disgust_sum: 0, neutral_sum: 0,
                     goal_alignment_sum: 0, content_count: 0
                 };
             }
@@ -51,6 +52,9 @@ router.get('/emotion-timeline', requireAuth, async (req: AuthRequest, res) => {
             dailyStats[dateStr].anger_sum += emotions.anger || 0;
             dailyStats[dateStr].fear_sum += emotions.fear || 0;
             dailyStats[dateStr].sadness_sum += emotions.sadness || 0;
+            dailyStats[dateStr].surprise_sum += emotions.surprise || 0;
+            dailyStats[dateStr].disgust_sum += emotions.disgust || 0;
+            dailyStats[dateStr].neutral_sum += emotions.neutral || 0;
             dailyStats[dateStr].goal_alignment_sum += log.score;
             dailyStats[dateStr].content_count += 1;
         });
@@ -64,6 +68,9 @@ router.get('/emotion-timeline', requireAuth, async (req: AuthRequest, res) => {
                 anger:   stat.content_count ? stat.anger_sum / stat.content_count : 0,
                 fear:    stat.content_count ? stat.fear_sum / stat.content_count : 0,
                 sadness: stat.content_count ? stat.sadness_sum / stat.content_count : 0,
+                surprise:stat.content_count ? stat.surprise_sum / stat.content_count : 0,
+                disgust: stat.content_count ? stat.disgust_sum / stat.content_count : 0,
+                neutral: stat.content_count ? stat.neutral_sum / stat.content_count : 0,
             },
             content_count: stat.content_count
         }));

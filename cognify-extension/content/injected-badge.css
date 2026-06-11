@@ -1,96 +1,470 @@
-/* Cognify Minimalist Professional Badge Styles */
+/* Cognify Minimalist Dark Premium 3D Glassmorphic Badge Styles */
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
 
 #cognify-analysis-badge {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 16px 0;
-  padding: 14px 16px;
-  border-radius: 8px;
-  background-color: rgba(10, 10, 15, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #ffffff;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  position: relative;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  margin: 12px 0 16px 0;
+  clear: both;
 }
 
+.cognify-premium-container {
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #ffffff;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(14, 14, 16, 0.95) 0%, rgba(6, 6, 8, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 
+    0 12px 24px rgba(0, 0, 0, 0.6), 
+    0 2px 8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 16px rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  position: relative;
+  overflow: hidden;
+  animation: cognify-slide-down 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cognify-premium-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 100%;
+  background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Theme Accents (Subtle Glows) */
+.cognify-premium-container.theme-green::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  z-index: 1;
+}
+.cognify-premium-container.theme-amber::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.6), transparent);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  z-index: 1;
+}
+.cognify-premium-container.theme-red::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.6), transparent);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  z-index: 1;
+}
+
+@keyframes cognify-slide-down {
+  from { opacity: 0; transform: translateY(-8px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.cognify-badge-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
 .cognify-badge-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.cognify-badge-stats {
+.cognify-brand-lockup {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.cognify-badge-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.cognify-badge-dot.pulse {
-  animation: cognify-opacity-pulse 2s ease-in-out infinite;
-}
-
-@keyframes cognify-opacity-pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-
-.cognify-badge-verdict {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.cognify-badge-separator {
-  width: 1px;
-  height: 12px;
-  background-color: rgba(255, 255, 255, 0.15);
-  margin: 0 2px;
-}
-
-.cognify-badge-score {
-  font-size: 14px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.cognify-badge-dashboard-btn {
-  background-color: transparent;
-  color: #A1A1AA;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 6px 10px;
+.cognify-brand-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.cognify-brand-icon-wrapper svg {
+  width: 14px;
+  height: 14px;
+}
+
+.cognify-brand-text {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  background: linear-gradient(to right, #ffffff, #a1a1aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Status Pill */
+.cognify-badge-status-pill {
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  font-size: 11px;
+  font-weight: 600;
 }
 
-.cognify-badge-dashboard-btn:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
+.cognify-badge-status-pill.loading {
+  color: #A1A1AA;
+}
+
+.cognify-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.cognify-badge-dot.pulse-subtle {
+  animation: cognify-pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes cognify-pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.cognify-badge-verdict {
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cognify-pill-separator {
+  width: 1px;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.cognify-badge-score {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Content Area */
+.cognify-badge-content {
+  padding: 10px 16px 12px;
 }
 
 .cognify-badge-summary {
   font-size: 13px;
   line-height: 1.5;
+  color: #CBD5E1;
+  font-weight: 400;
+}
+
+.cognify-badge-summary.error-msg {
+  color: #FCA5A5;
+  padding: 12px 16px;
+}
+
+/* Footer / Actions */
+.cognify-badge-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.cognify-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 100%);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.primary-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.primary-btn .chevron {
+  transition: transform 0.3s ease;
+}
+
+.primary-btn.active .chevron {
+  transform: rotate(180deg);
+}
+
+.secondary-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94A3B8;
+}
+
+.secondary-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Recommendations Grid */
+.cognify-recommend-results {
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 16px;
+  animation: cognify-fade-in 0.3s ease forwards;
+}
+
+@keyframes cognify-fade-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cognify-recommend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cognify-recommend-title-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.cognify-icon-btn {
+  background: transparent;
+  border: none;
+  color: #71717A;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.cognify-icon-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(15deg) scale(1.1);
+}
+
+.cognify-icon-btn.spinning svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* Grid Layout */
+.cognify-recommend-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* Premium Card Design */
+.cognify-recommend-card {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  overflow: hidden;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.cognify-recommend-card:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+.cognify-card-thumb-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: #000;
+}
+
+.cognify-card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cognify-recommend-card:hover .cognify-card-thumb {
+  transform: scale(1.05);
+}
+
+.cognify-card-duration {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+
+.cognify-card-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 3;
+}
+
+.cognify-recommend-card:hover .cognify-card-overlay {
+  opacity: 1;
+}
+
+.cognify-play-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.8);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.cognify-play-icon svg {
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+}
+
+.cognify-recommend-card:hover .cognify-play-icon {
+  transform: scale(1);
+}
+
+.cognify-card-info {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.cognify-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F8FAFC;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cognify-card-meta {
+  font-size: 11px;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.cognify-card-reason {
+  font-size: 12px;
+  color: #CBD5E1;
+  line-height: 1.4;
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cognify-card-score {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #10B981;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+/* States */
+.cognify-loading-state,
+.cognify-empty-state,
+.cognify-error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
   color: #A1A1AA;
-  margin-left: 18px; /* Aligns perfectly with the text under the dot */
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+  grid-column: 1 / -1;
+}
+
+.cognify-error-state {
+  color: #F87171;
+  border-color: rgba(248, 113, 113, 0.15);
+  background-color: rgba(248, 113, 113, 0.05);
 }

@@ -17,15 +17,30 @@ const Mirror = () => {
   const heatmapData = useMemo(() => {
     const byDate: Record<string, number> = {};
     (timelineData || []).forEach((item: any) => {
+      // item.date is UTC, but typically it is returned as YYYY-MM-DD from backend
       byDate[item.date] = Math.round((item.averageScore || 0) * 100);
     });
 
-    return Array.from({ length: 365 }).map((_, i) => {
-      const d = subDays(new Date(), 364 - i);
+    const today = new Date();
+    const firstDay = subDays(today, 364);
+    const padding = firstDay.getDay(); // 0 is Sunday
+
+    const data: any[] = [];
+    
+    // Add invisible padding cells
+    for (let i = 0; i < padding; i++) {
+      data.push({ isPadding: true });
+    }
+
+    // Add 365 days of data
+    for (let i = 0; i < 365; i++) {
+      const d = subDays(today, 364 - i);
       const key = format(d, 'yyyy-MM-dd');
       const score = byDate[key] ?? null;
-      return { date: d, score, count: score !== null ? 1 : 0 };
-    });
+      data.push({ isPadding: false, date: d, score, count: score !== null ? 1 : 0 });
+    }
+
+    return data;
   }, [timelineData]);
 
   const driftTrendData = useMemo(() => {
@@ -255,11 +270,15 @@ const Mirror = () => {
             <div className="flex gap-1 overflow-x-auto pb-4 pt-2 custom-scrollbar w-full">
               <div className="grid grid-rows-7 grid-flow-col gap-1 min-w-max mx-auto">
                 {heatmapData.map((day, i) => (
-                  <div
-                    key={i}
-                    className={cn('w-3.5 h-3.5 rounded-sm transition-colors hover:ring-2 hover:ring-white/50', getHeatmapColor(day.score))}
-                    title={`${format(day.date, 'MMM do')}: ${day.score !== null ? `${day.score}% Alignment` : 'No data'}`}
-                  />
+                  day.isPadding ? (
+                    <div key={`pad-${i}`} className="w-3.5 h-3.5 opacity-0 pointer-events-none" />
+                  ) : (
+                    <div
+                      key={i}
+                      className={cn('w-3.5 h-3.5 rounded-sm transition-colors hover:ring-2 hover:ring-white/50', getHeatmapColor(day.score))}
+                      title={`${format(day.date, 'MMM do')}: ${day.score !== null ? `${day.score}% Alignment` : 'No data'}`}
+                    />
+                  )
                 ))}
               </div>
             </div>

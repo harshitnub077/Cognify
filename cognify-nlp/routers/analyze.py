@@ -35,8 +35,10 @@ async def analyze_url(req: AnalyzeRequest):
     - Layer 2: Qdrant semantic cache (by embedding similarity ≥ 0.95) → saves LLM calls
     """
 
-    # ── Layer 1: Redis exact-match cache ─────────────────────────────────────
-    cached_data = get_cached_analysis(req.url, req.user_goals)
+    # We append a version string to the goals to invalidate older harsh judgments.
+    cache_goals = [g + " (v2)" for g in req.user_goals]
+    
+    cached_data = get_cached_analysis(req.url, cache_goals)
     if cached_data:
         cached_data["cached"] = True
         return cached_data
@@ -50,7 +52,7 @@ async def analyze_url(req: AnalyzeRequest):
         title = metadata.get("title", "Unknown Title")
 
     # ── Layer 2: Semantic cache (Qdrant embedding similarity) ─────────────────
-    semantic_hit = await semantic_cache_get(title=title, goals=req.user_goals)
+    semantic_hit = await semantic_cache_get(title=title, goals=cache_goals)
     if semantic_hit:
         insight = semantic_hit["insight"]
         # We still need emotion + toxicity for the response schema
@@ -74,7 +76,7 @@ async def analyze_url(req: AnalyzeRequest):
             "cached": True,
             "analyzed_at": datetime.utcnow().isoformat() + "Z",
         }
-        set_cached_analysis(req.url, req.user_goals, response_data)
+        set_cached_analysis(req.url, cache_goals, response_data)
         return response_data
 
     # ── Fetch transcript in background (non-blocking) ─────────────────────────
@@ -132,12 +134,12 @@ async def analyze_url(req: AnalyzeRequest):
     }
 
     # ── Save to both cache layers (fire and forget) ───────────────────────────
-    set_cached_analysis(req.url, req.user_goals, response_data)
+    set_cached_analysis(req.url, cache_goals, response_data)
 
     # Semantic cache + content store (run in background, don't block response)
     asyncio.create_task(semantic_cache_set(
         title=title,
-        goals=req.user_goals,
+        goals=cache_goals,
         insight=insight_data,
     ))
 

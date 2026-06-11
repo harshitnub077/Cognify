@@ -219,6 +219,38 @@ router.get('/search', requireAuth, async (req: AuthRequest, res) => {
     }
 });
 
+// UPDATE actual watch time for a content log
+router.put('/time', requireAuth, async (req: AuthRequest, res) => {
+    try {
+        const userId = req.user.id;
+        const { url, additionalSecs } = req.body;
+
+        if (!url || !additionalSecs || additionalSecs <= 0) {
+            return res.status(400).json({ success: false, error: 'Valid URL and additionalSecs required' });
+        }
+
+        // Find the most recent log for this URL to update
+        const recentLog = await prisma.contentLog.findFirst({
+            where: { userId, url },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        if (!recentLog) {
+            return res.status(404).json({ success: false, error: 'Content log not found' });
+        }
+
+        const updatedLog = await prisma.contentLog.update({
+            where: { id: recentLog.id },
+            data: { timeSpentSecs: recentLog.timeSpentSecs + additionalSecs }
+        });
+
+        res.json({ success: true, data: { timeSpentSecs: updatedLog.timeSpentSecs } });
+    } catch (error) {
+        console.error('Error updating time spent:', error);
+        res.status(500).json({ success: false, error: 'Failed to update time spent' });
+    }
+});
+
 // DELETE a single content log
 router.delete('/:id', requireAuth, async (req: AuthRequest, res) => {
     try {

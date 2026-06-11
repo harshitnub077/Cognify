@@ -146,7 +146,9 @@ async def rag_recommend(user_goals: List[str], emotional_state: Dict[str, Any], 
     user_context = f"Goals: {user_goals}, Emotion: {emotional_state}, Drift: {drift_score}"
     
     template = """<|system|>
-You are a helpful AI that strictly outputs JSON arrays of objects. Do not write markdown. Do not write text outside the JSON. Return exactly {limit} recommendations based on the context.
+You are an extremely strict, data-driven AI. You must strictly output JSON arrays of objects. 
+CRITICAL INSTRUCTION: You may ONLY recommend videos that explicitly exist in the "Retrieved content". Do NOT invent or hallucinate video IDs, titles, or concepts. If the retrieved content cannot help achieve the user goals, return an empty JSON array []. 
+Do not write markdown. Do not write text outside the JSON. Return exactly {limit} recommendations based on the context.
 Format exactly like this:
 [
   {{

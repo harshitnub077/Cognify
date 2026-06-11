@@ -1,0 +1,221 @@
+
+> frontend@0.0.0 lint
+> eslint .
+
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/components/CTABackground3D.tsx
+   1:25  warning  'useMemo' is defined but never used                                                    @typescript-eslint/no-unused-vars
+  17:9   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/purity')
+  19:9   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/purity')
+  21:9   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/purity')
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/components/CustomCursor.tsx
+  14:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/components/CustomCursor.tsx:14:5
+  12 |     // Check if device is touch
+  13 |     if (window.matchMedia('(pointer: coarse)').matches) return;
+> 14 |     setIsVisible(true);
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  15 |
+  16 |     const onMouseMove = (e: MouseEvent) => {
+  17 |       // Move dot instantly  react-hooks/set-state-in-effect
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/components/NeuralBackground.tsx
+  110:15  warning  'iz' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/components/RecommendationCard.tsx
+  13:87  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  15:10  warning  'isHovered' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/hooks/useDashboardData.ts
+  91:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/layouts/DashboardLayout.tsx
+    2:27  warning  'useLocation' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   15:3   warning  'IconSearch' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   21:3   warning  'IconScan' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+   22:3   warning  'IconPlayerPlayFilled' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   23:3   warning  'IconPlayerPauseFilled' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   24:3   warning  'IconSparkles' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+   25:3   warning  'IconClock' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   29:10  warning  'ThemeToggle' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   31:10  warning  'format' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   32:8   warning  'toast' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   33:8   warning  'api' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   57:17  warning  'profile' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  202:10  error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/layouts/DashboardLayout.tsx:202:10
+  200 |       {/* Desktop Sidebar */}
+  201 |       <div className="hidden lg:flex h-full shrink-0">
+> 202 |         <Sidebar />
+      |          ^^^^^^^ This component is created during render
+  203 |       </div>
+  204 |
+  205 |       {/* Mobile Drawer */}
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/layouts/DashboardLayout.tsx:75:19
+   73 |   }, []);
+   74 |
+>  75 |   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  76 |     <aside className={cn(
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+>  77 |       'flex flex-col h-full bg-white dark:bg-[#0a0a0a]',
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 194 |     </aside>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 195 |   );
+      | ^^^^ The component is created during render here
+  196 |
+  197 |   return (
+  198 |     <div className="flex h-screen bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white font-sans overflow-hidden">                                                  react-hooks/static-components
+  223:16  error    Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/layouts/DashboardLayout.tsx:223:16
+  221 |               className="lg:hidden fixed left-0 top-0 bottom-0 w-[280px] z-50 shadow-2xl"
+  222 |             >
+> 223 |               <Sidebar mobile />
+      |                ^^^^^^^ This component is created during render
+  224 |             </motion.div>
+  225 |           </>
+  226 |         )}
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/layouts/DashboardLayout.tsx:75:19
+   73 |   }, []);
+   74 |
+>  75 |   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
+      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  76 |     <aside className={cn(
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+>  77 |       'flex flex-col h-full bg-white dark:bg-[#0a0a0a]',
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 194 |     </aside>
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^
+> 195 |   );
+      | ^^^^ The component is created during render here
+  196 |
+  197 |   return (
+  198 |     <div className="flex h-screen bg-slate-50 dark:bg-[#0a0a0a] text-slate-900 dark:text-white font-sans overflow-hidden">  react-hooks/static-components
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/Dashboard.tsx
+    5:19  warning  'IconSparkles' is defined but never used                                                                                                                                                  @typescript-eslint/no-unused-vars
+   20:17  warning  'weeklyReport' is assigned a value but never used                                                                                                                                         @typescript-eslint/no-unused-vars
+   25:56  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   41:9   warning  The 'logs' logical expression could make the dependencies of useMemo Hook (at line 67) change on every render. To fix this, wrap the initialization of 'logs' in its own useMemo() Hook   react-hooks/exhaustive-deps
+   41:9   warning  The 'logs' logical expression could make the dependencies of useMemo Hook (at line 82) change on every render. To fix this, wrap the initialization of 'logs' in its own useMemo() Hook   react-hooks/exhaustive-deps
+   41:9   warning  The 'logs' logical expression could make the dependencies of useMemo Hook (at line 104) change on every render. To fix this, wrap the initialization of 'logs' in its own useMemo() Hook  react-hooks/exhaustive-deps
+   51:44  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   55:65  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   73:41  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   74:42  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   75:48  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   86:41  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   87:42  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   88:42  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   90:61  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   92:41  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+  117:19  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+  379:42  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+  397:58  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/Home.tsx
+  562:9  error  Parsing error: JSX element 'section' has no corresponding closing tag
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/Onboarding.tsx
+  61:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/dashboard/Circles.tsx
+    3:21  warning  'IconPlus' is defined but never used      @typescript-eslint/no-unused-vars
+    3:31  warning  'IconUserPlus' is defined but never used  @typescript-eslint/no-unused-vars
+    3:45  warning  'IconTrophy' is defined but never used    @typescript-eslint/no-unused-vars
+   31:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   78:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  112:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  131:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  141:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/dashboard/Coach.tsx
+    4:10  warning  'IconUser' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   32:23  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+   33:20  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+   38:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/dashboard/Coach.tsx:38:7
+  36 |           content: msg.content
+  37 |         }));
+> 38 |       setMessages(formattedHistory);
+     |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  39 |     }
+  40 |   }, [history]);
+  41 |  react-hooks/set-state-in-effect
+   40:6   warning  React Hook useEffect has a missing dependency: 'messages.length'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-hooks/exhaustive-deps
+  106:14  warning  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/dashboard/Goals.tsx
+    4:56  warning  'IconX' is defined but never used         @typescript-eslint/no-unused-vars
+  175:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/dashboard/History.tsx
+   41:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   61:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  162:79  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  171:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/dashboard/Mirror.tsx
+    7:10  warning  'IconSparkles' is defined but never used                                                                                                                                                  @typescript-eslint/no-unused-vars
+    7:24  warning  'IconTrendingUp' is defined but never used                                                                                                                                                @typescript-eslint/no-unused-vars
+    7:40  warning  'IconTrendingDown' is defined but never used                                                                                                                                              @typescript-eslint/no-unused-vars
+    7:58  warning  'IconUserScan' is defined but never used                                                                                                                                                  @typescript-eslint/no-unused-vars
+    7:72  warning  'IconBrain' is defined but never used                                                                                                                                                     @typescript-eslint/no-unused-vars
+   12:17  warning  'weeklyReport' is assigned a value but never used                                                                                                                                         @typescript-eslint/no-unused-vars
+   12:42  warning  'reportLoading' is assigned a value but never used                                                                                                                                        @typescript-eslint/no-unused-vars
+   15:9   warning  The 'logs' logical expression could make the dependencies of useMemo Hook (at line 112) change on every render. To fix this, wrap the initialization of 'logs' in its own useMemo() Hook  react-hooks/exhaustive-deps
+   15:9   warning  The 'logs' logical expression could make the dependencies of useMemo Hook (at line 126) change on every render. To fix this, wrap the initialization of 'logs' in its own useMemo() Hook  react-hooks/exhaustive-deps
+   19:41  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   28:17  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   53:42  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   70:41  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+   96:37  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+  100:24  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+  116:22  warning  Unexpected any. Specify a different type                                                                                                                                                  @typescript-eslint/no-explicit-any
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/dashboard/Saved.tsx
+  25:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/harshitru/Desktop/Projects/Cognify/frontend/src/pages/dashboard/Settings.tsx
+   4:27  warning  'IconLock' is defined but never used                                                                @typescript-eslint/no-unused-vars
+   5:3   warning  'IconSettings' is defined but never used                                                            @typescript-eslint/no-unused-vars
+   5:17  warning  'IconBrain' is defined but never used                                                               @typescript-eslint/no-unused-vars
+   6:3   warning  'IconUserCircle' is defined but never used                                                          @typescript-eslint/no-unused-vars
+   6:29  warning  'IconServer' is defined but never used                                                              @typescript-eslint/no-unused-vars
+   6:41  warning  'IconChevronRight' is defined but never used                                                        @typescript-eslint/no-unused-vars
+  14:7   warning  'ACHIEVEMENTS_LIST' is assigned a value but never used                                              @typescript-eslint/no-unused-vars
+  46:9   warning  'unlockedIds' is assigned a value but never used                                                    @typescript-eslint/no-unused-vars
+  46:54  warning  Unexpected any. Specify a different type                                                            @typescript-eslint/no-explicit-any
+  54:16  warning  'e' is defined but never used                                                                       @typescript-eslint/no-unused-vars
+  64:5   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+
+✖ 93 problems (5 errors, 88 warnings)
+  0 errors and 4 warnings potentially fixable with the `--fix` option.
+

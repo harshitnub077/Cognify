@@ -1,15 +1,15 @@
 :root {
-  --bg-color: #0A0A0F;
-  --surface: rgba(255, 255, 255, 0.03);
-  --surface-border: rgba(255, 255, 255, 0.08);
+  --bg-color: #030303;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-border: rgba(255, 255, 255, 0.1);
   --text-primary: #FFFFFF;
   --text-muted: #A1A1AA;
   --brand-color: #FFFFFF;
-  --brand-cyan: #A1A1AA;
+  --brand-cyan: #3b82f6; /* Blueish accent */
 }
 
 body {
-  width: 320px;
+  width: 340px;
   margin: 0;
   padding: 0;
   font-family: 'Geist', sans-serif;
@@ -23,16 +23,16 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--surface-border);
-  background-color: rgba(10, 10, 15, 0.8);
+  background-color: rgba(3, 3, 3, 0.8);
   backdrop-filter: blur(12px);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .logo {
@@ -47,7 +47,7 @@ body {
 h1 {
   margin: 0;
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -56,17 +56,17 @@ h1 {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #ef4444; /* red disconnected by default */
+  background-color: #ef4444; 
   transition: background-color 0.3s ease;
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }
 .status-dot.active {
-  background-color: #10b981; /* emerald */
+  background-color: #10b981; 
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
 .main-content {
-  padding: 16px;
+  padding: 20px;
 }
 
 .hidden {
@@ -92,10 +92,25 @@ h1 {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 .btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(37,99,235,0.4) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.6) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.8);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
 }
 
 .stat-row {
@@ -109,7 +124,7 @@ h1 {
   background-color: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: 12px;
-  padding: 12px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -123,12 +138,12 @@ h1 {
   color: var(--text-muted);
   letter-spacing: 0.05em;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .stat-value {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: #fff;
 }
@@ -137,12 +152,13 @@ h1 {
   background-color: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: 12px;
-  padding: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
   backdrop-filter: blur(10px);
 }
 
 .site-header {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .site-title {
@@ -154,14 +170,63 @@ h1 {
 }
 
 .site-name {
-  margin: 0 0 4px 0;
-  font-size: 14px;
+  margin: 0 0 6px 0;
+  font-size: 15px;
   font-weight: 600;
   color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .site-desc {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.recommend-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--surface-border);
+}
+
+.search-bar {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 12px 12px 12px 36px;
+  background-color: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-bar input:focus {
+  border-color: rgba(59, 130, 246, 0.6);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+.search-bar input::placeholder {
   color: var(--text-muted);
 }

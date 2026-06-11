@@ -4,14 +4,15 @@ from services.llm_router import call_llm
 
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 SYSTEM_PROMPT_INSIGHT = """
-You are Cognify's content analysis engine.
+You are Cognify's extremely strict, ruthless content analysis engine.
 Given content metadata and NLP scores, generate a structured insight.
+CRITICAL INSTRUCTION: Be entirely empirical. Do NOT guess, extrapolate, or hallucinate connections. If the data provided does not explicitly and obviously align with the user's goals, you must issue a "skip" or "caution" verdict.
 Be brutally concise. No filler words. Return ONLY valid JSON.
 
 Output format:
 {
   "verdict": "watch" | "skip" | "caution",
-  "insight": "exactly 2 sentences. sentence 1: what this content does to the mind. sentence 2: whether it aligns with the user's goals.",
+  "insight": "exactly 2 sentences. sentence 1: what this content does to the mind based purely on the data. sentence 2: an extremely harsh assessment of whether it aligns with the user's goals.",
   "identity_impact": "1 short phrase describing personality effect",
   "urgency": "high" | "medium" | "low"
 }
@@ -77,17 +78,24 @@ async def generate_insight_and_score(title: str, goals: list[str], transcript: s
     User Goals: {goals}
     Transcript summary: {transcript[:1000] if transcript else 'No transcript available.'}
     
-    Evaluate how this aligns with the user goals. Return JSON only:
+    Evaluate how this aligns with the user goals. 
+    
+    CRITICAL DIRECTIVES:
+    1. TOPICAL ALIGNMENT IS ALL THAT MATTERS: If the video is in the SAME broad topic domain as the user's goals, you MUST give it a VERY HIGH score (85-100) and a "watch" verdict.
+    2. NEVER PENALIZE FOR DEPTH: Do NOT penalize content for being introductory, high-level, or an overview, even if the user specifies "Advanced" goals. For example, if the goal is "Advanced Machine Learning" and the video is "Machine Learning explained in 17 min", it is a 95% match. Overviews are relevant to mastery. Never say it "lacks depth."
+    3. PENALIZE ONLY DISTRACTIONS: Only give a low score (< 30) and a "skip" verdict if the content is entirely unrelated to the goals (e.g., gaming, drama, unboxing).
+    
+    Return JSON only:
     {{
-        "score": 85,
+        "score": 95,
         "verdict": "watch",
-        "text": "1-sentence summary of insight"
+        "text": "1-sentence encouraging explanation of how it aligns with or supports the goals."
     }}
     """
     try:
         response_text = await call_llm(
             prompt=prompt,
-            system="You are an AI that strictly evaluates video alignment to goals. Return only JSON.",
+            system="You are a highly nuanced, supportive AI that evaluates video alignment to goals. You recognize that foundational overviews are highly relevant to advanced mastery. Return only JSON.",
             redis_client=redis_client,
             max_tokens=300,
             json_mode=True

@@ -80,7 +80,7 @@ async def _call_ollama(prompt: str, system: str, max_tokens: int, json_mode: boo
             {"role": "user",   "content": prompt},
         ],
         "stream": False,
-        "options": {"num_predict": max_tokens},
+        "options": {"num_predict": max_tokens, "temperature": 0.0},
     }
     if json_mode:
         payload["format"] = "json"
@@ -106,7 +106,7 @@ async def _call_groq(prompt: str, system: str, max_tokens: int,
         {"role": "system", "content": system},
         {"role": "user",   "content": prompt},
     ]
-    kwargs: dict = {"model": "llama-3.3-70b-versatile", "messages": messages, "max_tokens": max_tokens}
+    kwargs: dict = {"model": "llama-3.3-70b-versatile", "messages": messages, "max_tokens": max_tokens, "temperature": 0.0}
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
 
@@ -128,6 +128,7 @@ async def _call_gemini(prompt: str, system: str, max_tokens: int,
     model = genai.GenerativeModel("gemini-2.0-flash", system_instruction=system)
     config = genai.GenerationConfig(
         max_output_tokens=max_tokens,
+        temperature=0.0,
         response_mime_type="application/json" if json_mode else "text/plain",
     )
     response = await asyncio.to_thread(model.generate_content, prompt, generation_config=config)

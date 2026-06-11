@@ -42,4 +42,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('conscious-count').textContent = lastAnalysis.isConscious ? 'Yes' : 'No';
     document.getElementById('avg-match').textContent = `${Math.round(lastAnalysis.score || 0)}%`;
   }
+
+  // Handle Recommendations Button
+  const recommendBtn = document.getElementById('recommend-btn');
+  const searchInput = document.getElementById('topic-search');
+  if (recommendBtn && searchInput) {
+    recommendBtn.addEventListener('click', () => {
+      const query = searchInput.value.trim();
+      if (query) {
+        chrome.tabs.create({ url: `http://localhost:5173/dashboard?goal=${encodeURIComponent(query)}` });
+      } else {
+        chrome.tabs.create({ url: `http://localhost:5173/dashboard` });
+      }
+    });
+  }
 });

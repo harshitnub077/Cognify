@@ -3,7 +3,8 @@ from pydantic import BaseModel
 import random
 import json
 import os
-from youtube_search import YoutubeSearch
+import asyncio
+from youtubesearchpython import VideosSearch
 from services.llm_router import call_llm
 import redis.asyncio as redis
 
@@ -12,6 +13,7 @@ router = APIRouter(tags=["Recommend"])
 class RecommendRequest(BaseModel):
     goal: str
     limit: int = 5
+    exclude_urls: list[str] = []
 
 query_cache = {}
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
@@ -44,7 +46,15 @@ async def get_recommendations(req: RecommendRequest):
         else:
             search_query = query_cache[req.goal]["search_query"]
             
-        results = YoutubeSearch(search_query, max_results=50).to_dict()
+        def _fetch_videos():
+            search = VideosSearch(search_query, limit=50)
+            return search.result().get("result", [])
+            
+        results = await asyncio.to_thread(_fetch_videos)
+        
+        # Exclude shown URLs
+        if req.exclude_urls:
+            results = [r for r in results if r.get("link") not in req.exclude_urls]
             
         if len(results) > req.limit:
             sampled_videos = random.sample(results, req.limit)
@@ -65,6 +75,8 @@ async def get_recommendations(req: RecommendRequest):
     The user has a specific life or learning goal: "{req.goal}".
     I have a list of {len(video_titles)} YouTube videos. For each video, evaluate how well it matches the user's goal.
     
+    CRITICAL INSTRUCTION: Be extremely strict. If the video title has nothing to do with the goal (e.g. goal is JEE and video is DSA), give it a score of ZERO. Do NOT hallucinate connections.
+    
     Videos:
     {json.dumps(video_titles, indent=2)}
     
@@ -72,8 +84,8 @@ async def get_recommendations(req: RecommendRequest):
     Format:
     [
       {{
-        "score": 95, 
-        "reason": "1-sentence explanation of why this specific video helps."
+        "score": 10, 
+        "reason": "1-sentence extremely honest explanation of why it aligns or fails."
       }}
     ]
     """
@@ -82,7 +94,7 @@ async def get_recommendations(req: RecommendRequest):
     try:
         response_text = await call_llm(
             prompt=prompt,
-            system="You are an expert content curator. Output ONLY valid JSON array.",
+            system="You are an ultra-strict content curator. You actively penalize irrelevant content. Output ONLY valid JSON array.",
             redis_client=redis_client,
             max_tokens=800,
             json_mode=True
@@ -126,17 +138,24 @@ async def get_recommendations(req: RecommendRequest):
     # Step 3: Assemble final response
     items = []
     for idx, vid in enumerate(sampled_videos):
-        thumbnail_url = vid.get("thumbnails", ["https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80"])[0]
+        thumbnails = vid.get("thumbnails", [])
+        thumbnail_url = thumbnails[0].get("url") if thumbnails else "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80"
+        
+        channel_info = vid.get("channel", {})
+        channel_name = channel_info.get("name") if isinstance(channel_info, dict) else str(channel_info)
+        
+        view_count_info = vid.get("viewCount", {})
+        view_count = view_count_info.get("short") if isinstance(view_count_info, dict) else str(view_count_info)
         
         items.append({
             "title": vid.get("title") or "Unknown Title",
-            "channel": vid.get("channel") or "Unknown Channel",
-            "url": "https://youtube.com" + vid.get("url_suffix", "/"),
+            "channel": channel_name or "Unknown Channel",
+            "url": vid.get("link") or (f"https://youtube.com/watch?v={vid.get('id')}" if vid.get("id") else "https://youtube.com"),
             "thumbnail": thumbnail_url,
             "duration": vid.get("duration") or "10:00",
-            "viewCount": vid.get("views") or "10K views",
-            "reason": evaluations[idx].get("reason", "Curated for you."),
-            "score": evaluations[idx].get("score", 85)
+            "viewCount": view_count or "10K views",
+            "reason": evaluations[idx].get("reason", "Curated for you.") if idx < len(evaluations) else "Curated for you.",
+            "score": evaluations[idx].get("score", 85) if idx < len(evaluations) else 85
         })
         
     return {"data": items}

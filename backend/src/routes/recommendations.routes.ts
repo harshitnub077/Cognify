@@ -9,11 +9,13 @@ router.get('/', requireAuth, async (req: any, res) => {
   try {
     const goal = req.query.goal || 'Focused Thinker';
     const limit = parseInt(req.query.limit) || 8;
+    const exclude_urls = req.query.exclude ? req.query.exclude.split(',') : [];
     
     // Call Python NLP to generate hyper-specific recommendations using Gemini
     const nlpResponse = await axios.post('http://localhost:8001/recommend', {
       goal,
-      limit
+      limit,
+      exclude_urls
     });
     
     // Map the NLP output to include mock images/metadata for the UI

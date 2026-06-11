@@ -87,4 +87,30 @@ router.patch('/profile', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
+// POST /api/user/reset-demo
+router.post('/reset-demo', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user.id;
+    const email = req.user.email;
+
+    // VERY IMPORTANT: Only allow wiping if the user is the demo account!
+    if (email !== 'demo@example.com') {
+      return res.status(403).json({ error: 'Cannot reset data for real user accounts.' });
+    }
+
+    // Wipe all analytics data to start from zero for the live demo
+    await prisma.$transaction([
+      prisma.contentLog.deleteMany({ where: { userId } }),
+      prisma.driftScore.deleteMany({ where: { userId } }),
+      prisma.streak.deleteMany({ where: { userId } }),
+      // Keeping UserProfile so they don't have to redo onboarding every time
+    ]);
+
+    res.json({ success: true, message: 'Demo data reset successfully.' });
+  } catch (error) {
+    console.error('Error resetting demo user:', error);
+    res.status(500).json({ error: 'Failed to reset demo account' });
+  }
+});
+
 export default router;

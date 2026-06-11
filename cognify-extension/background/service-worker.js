@@ -100,6 +100,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
 
         if (!response.ok) {
+          if (response.status === 401) {
+            sendResponse({ error: 'Session expired. Please open the Cognify Dashboard to refresh.' });
+            return;
+          }
           const text = await response.text();
           console.error('[Cognify SW] Backend error:', text);
           sendResponse({ error: `Backend error: ${response.status}` });
@@ -129,5 +133,73 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     })();
     return true; // keep message channel open for async response
+  }
+
+  if (message.type === 'RECOMMEND') {
+    (async () => {
+      try {
+        const { cognify_token } = await chrome.storage.local.get('cognify_token');
+
+        if (!cognify_token) {
+          sendResponse({ error: 'Please login to Cognify Dashboard first' });
+          return;
+        }
+
+        const queryParams = new URLSearchParams({
+          goal: message.goal || '',
+          limit: message.limit || 4,
+          exclude: message.exclude ? message.exclude.join(',') : ''
+        }).toString();
+
+        const response = await fetch(`http://localhost:3001/api/recommendations?${queryParams}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${cognify_token}`
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            sendResponse({ error: 'Session expired. Please open the Cognify Dashboard to refresh.' });
+            return;
+          }
+          const text = await response.text();
+          console.error('[Cognify SW] Backend error:', text);
+          sendResponse({ error: `Backend error: ${response.status}` });
+          return;
+        }
+
+        const json = await response.json();
+        sendResponse({ data: json.data });
+      } catch (err) {
+        console.error('[Cognify SW] fetch error:', err);
+        sendResponse({ error: 'Cognify backend offline' });
+      }
+    })();
+    return true; // keep message channel open for async response
+  }
+
+  if (message.type === 'UPDATE_TIME') {
+    (async () => {
+      try {
+        const { cognify_token } = await chrome.storage.local.get('cognify_token');
+        if (!cognify_token) return;
+
+        await fetch('http://localhost:3001/api/content/time', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${cognify_token}`
+          },
+          body: JSON.stringify({
+            url: message.url,
+            additionalSecs: message.additionalSecs
+          })
+        });
+      } catch (err) {
+        console.error('[Cognify SW] time update error:', err);
+      }
+    })();
+    return false; // synchronous response not needed
   }
 });

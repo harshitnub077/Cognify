@@ -51,14 +51,17 @@ const Dashboard = () => {
       const wasteItems = logs.filter((log: any) => 
         log.score < 50 && isSameDay(new Date(log.createdAt), day)
       );
-      // Assume 12 mins saved per waste content skipped
-      const savedMinutes = wasteItems.length * 12;
+      // Assume 15 mins average length. Saved = 15 - actual time spent
+      const savedMinutes = wasteItems.reduce((acc: number, log: any) => {
+        const spentMins = (log.timeSpentSecs || 0) / 60;
+        return acc + Math.max(0, 15 - spentMins);
+      }, 0);
       cumulativeSaved += savedMinutes;
       
       return {
         date: format(day, 'EEE'),
-        saved: cumulativeSaved,
-        daily: savedMinutes
+        saved: Math.round(cumulativeSaved),
+        daily: Math.round(savedMinutes)
       };
     });
   }, [logs]);
@@ -84,7 +87,8 @@ const Dashboard = () => {
     const waste = todayLogs.filter((log: any) => log.score < 50);
     const focus = todayLogs.filter((log: any) => log.score >= 50);
     
-    const minutesWasted = waste.length * 12;
+    const totalSecsWasted = waste.reduce((acc: number, log: any) => acc + (log.timeSpentSecs || 0), 0);
+    const minutesWasted = waste.length > 0 ? Math.max(1, Math.round(totalSecsWasted / 60)) : 0;
     const learnedTitles = focus.map((l: any) => l.title).slice(0, 2).join(' and ');
     
     let strictMessage = "You haven't consumed any content today. Stay focused.";
@@ -306,7 +310,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="text-[10px] font-medium text-slate-400 bg-[#0a0a0a] px-2 py-1 rounded border border-[#1a1a1a]">
-              Assuming 12m/video
+              Assuming 15m/video
             </div>
           </div>
           <div className="h-[250px] w-full mt-4">

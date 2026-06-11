@@ -57,6 +57,7 @@ export const DashboardLayout = () => {
   const { data: profile } = useUserProfile();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
   
   const userMenuRef = useRef<HTMLDivElement>(null);
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Explorer';
@@ -149,9 +150,19 @@ export const DashboardLayout = () => {
             onClick={() => setShowUserMenu(v => !v)}
             className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-[#222] transition-colors"
           >
-            <div className="w-6 h-6 rounded-md bg-primary text-white-fg flex items-center justify-center font-bold text-xs shrink-0 uppercase">
-              {firstName.charAt(0)}
-            </div>
+            {(user?.user_metadata?.avatar_url || user?.user_metadata?.picture) && !imgError ? (
+              <img 
+                src={user?.user_metadata?.avatar_url || user?.user_metadata?.picture} 
+                alt={firstName} 
+                className="w-7 h-7 rounded-md object-cover shrink-0" 
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-md bg-primary text-white-fg flex items-center justify-center font-bold text-xs shrink-0 uppercase">
+                {firstName.charAt(0)}
+              </div>
+            )}
             <div className="flex-1 text-left min-w-0">
               <div className="text-xs font-semibold truncate">{firstName}</div>
               <div className="text-[10px] text-surface-muted truncate">{user?.email}</div>
