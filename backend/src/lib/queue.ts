@@ -28,7 +28,8 @@ class InMemoryQueue {
                 return;
             }
 
-            const response = await axios.post('http://localhost:8001/analyze', {
+            const nlpApiUrl = process.env.NLP_API_URL || 'http://localhost:8001';
+            const response = await axios.post(`${nlpApiUrl}/analyze`, {
                 url,
                 user_goals: userGoals
             });

@@ -12,7 +12,8 @@ router.get('/', requireAuth, async (req: any, res) => {
     const exclude_urls = req.query.exclude ? req.query.exclude.split(',') : [];
     
     // Call Python NLP to generate hyper-specific recommendations using Gemini
-    const nlpResponse = await axios.post('http://localhost:8001/recommend', {
+    const nlpApiUrl = process.env.NLP_API_URL || 'http://localhost:8001';
+    const nlpResponse = await axios.post(`${nlpApiUrl}/recommend`, {
       goal,
       limit,
       exclude_urls

@@ -96,7 +96,8 @@ router.post('/analyze', requireAuth, analyzeRateLimiter, async (req: AuthRequest
     // Call NLP Microservice
     let nlpResponse: any;
     try {
-        const response = await axios.post('http://localhost:8001/analyze', {
+        const nlpApiUrl = process.env.NLP_API_URL || 'http://localhost:8001';
+        const response = await axios.post(`${nlpApiUrl}/analyze`, {
             url,
             title,
             transcript: req.body.transcript,
@@ -189,7 +190,8 @@ router.get('/search', requireAuth, async (req: AuthRequest, res) => {
         }
 
         // Call NLP Semantic Search
-        const response = await axios.post('http://localhost:8001/search', {
+        const nlpApiUrl = process.env.NLP_API_URL || 'http://localhost:8001';
+        const response = await axios.post(`${nlpApiUrl}/search`, {
             user_id: userId,
             query,
             limit: 20
