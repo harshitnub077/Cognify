@@ -62,7 +62,8 @@ const Coach = () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/coach/message`, {
+      const baseURL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://cognify-api-lin2.onrender.com/api' : 'http://localhost:3001/api');
+      const response = await fetch(`${baseURL}/coach/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
