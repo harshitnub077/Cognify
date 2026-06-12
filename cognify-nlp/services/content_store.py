@@ -31,16 +31,16 @@ from qdrant_client.models import (
     VectorParams, Distance, PointStruct,
     Filter, FieldCondition, MatchValue, ScoredPoint
 )
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.embeddings import Embeddings
 
-CONTENT_COLLECTION = "cognify_content_v2"
-VECTOR_SIZE = 384
+CONTENT_COLLECTION = "cognify_content_v3"
+VECTOR_SIZE = 768
 
-_embedder: Optional[HuggingFaceEmbeddings] = None
+_embedder: Optional[Embeddings] = None
 _client: Optional[QdrantClient] = None
 
 
-def init_content_store(embedder: HuggingFaceEmbeddings, qdrant_client: QdrantClient):
+def init_content_store(embedder: Embeddings, qdrant_client: QdrantClient):
     """Initialize with shared instances. Called once at startup."""
     global _embedder, _client
     _embedder = embedder

@@ -27,9 +27,9 @@ from qdrant_client.models import (
 _embedder = None
 _qdrant_client: Optional[QdrantClient] = None
 
-CACHE_COLLECTION = "cognify_semantic_cache"
+CACHE_COLLECTION = "cognify_semantic_cache_v2"
 SIMILARITY_THRESHOLD = 0.88  # ≥88% cosine similarity = cache hit (tuned from real data)
-VECTOR_SIZE = 384             # all-MiniLM-L6-v2 output dimension
+VECTOR_SIZE = 768             # Gemini embedding-001 output dimension
 
 CACHE_TTL_DAYS = 7
 

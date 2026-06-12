@@ -27,15 +27,8 @@ async def lifespan(app: FastAPI):
     """
     print("🚀 Cognify NLP API starting up...")
 
-    # 1. Load shared embedder (384-dim MiniLM, ~90MB, loads in ~3s)
-    from langchain_huggingface import HuggingFaceEmbeddings
-    import torch
-    torch.set_num_threads(1)
-    embedder = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True},
-    )
+    from langchain_google_genai import GoogleGenerativeAIEmbeddings
+    embedder = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     print("✅ Embedder loaded (sentence-transformers/all-MiniLM-L6-v2)")
 
     # 2. Connect to local Qdrant

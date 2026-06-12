@@ -5,10 +5,7 @@ import re
 from typing import List, Dict, Any
 
 from langchain_qdrant import QdrantVectorStore
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_classic.retrievers import ContextualCompressionRetriever
-from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from qdrant_client import QdrantClient
 from qdrant_client import models
 from services.llm_router import call_llm
@@ -24,14 +21,7 @@ def get_retriever():
     if _retriever is not None:
         return _retriever
 
-    print("Loading PyTorch Models (Embedder & Reranker)...")
-    import torch
-    torch.set_num_threads(1) # Save memory
-
-    embedder = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}
-    )
+    embedder = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 
     qdrant_url = os.getenv("QDRANT_URL")
     if qdrant_url:
@@ -41,14 +31,14 @@ def get_retriever():
         os.makedirs(qdrant_path, exist_ok=True)
         client = QdrantClient(path=qdrant_path)
 
-    COLLECTION_NAME = "cognify_content"
+    COLLECTION_NAME = "cognify_content_v3"
 
     try:
         client.get_collection(COLLECTION_NAME)
     except Exception:
         client.create_collection(
             collection_name=COLLECTION_NAME,
-            vectors_config={"size": 384, "distance": "Cosine"}
+            vectors_config={"size": 768, "distance": "Cosine"}
         )
 
     vectorstore = QdrantVectorStore(
@@ -57,25 +47,18 @@ def get_retriever():
         embedding=embedder
     )
 
-    reranker_model = HuggingFaceCrossEncoder(
-        model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
-    )
-    reranker = CrossEncoderReranker(model=reranker_model, top_n=5)
-    _retriever = ContextualCompressionRetriever(
-        base_compressor=reranker,
-        base_retriever=vectorstore.as_retriever(
-            search_kwargs={
-                "k": 20, 
-                "filter": models.Filter(
-                    must=[
-                        models.FieldCondition(
-                            key="metadata.toxicity_score",
-                            range=models.Range(lt=0.3)
-                        )
-                    ]
-                )
-            }
-        )
+    _retriever = vectorstore.as_retriever(
+        search_kwargs={
+            "k": 5, 
+            "filter": models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="metadata.toxicity_score",
+                        range=models.Range(lt=0.3)
+                    )
+                ]
+            )
+        }
     )
     return _retriever
 
