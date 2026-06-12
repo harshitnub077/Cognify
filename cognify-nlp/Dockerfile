@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ENV TRANSFORMERS_CACHE=/tmp/huggingface
+ENV HF_HOME=/tmp/huggingface
+
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
