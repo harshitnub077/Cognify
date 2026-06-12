@@ -9,81 +9,75 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_classic.retrievers import ContextualCompressionRetriever
 from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-from langchain_core.prompts import PromptTemplate
-from langchain_huggingface import HuggingFacePipeline
 from qdrant_client import QdrantClient
 from qdrant_client import models
-import os
 from services.llm_router import call_llm
 import redis.asyncio as redis
+
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
-# 1. Initialize Embedder
-embedder = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+# Lazy load the retriever components to save RAM on Render (512MB limit)
+_retriever = None
 
-# 2. Connect to Qdrant (Local Path or Docker URL)
-qdrant_url = os.getenv("QDRANT_URL")
-if qdrant_url:
-    client = QdrantClient(url=qdrant_url)
-else:
-    qdrant_path = os.path.join(os.path.dirname(__file__), "..", "qdrant_db")
-    os.makedirs(qdrant_path, exist_ok=True)
-    client = QdrantClient(path=qdrant_path)
+def get_retriever():
+    global _retriever
+    if _retriever is not None:
+        return _retriever
 
-COLLECTION_NAME = "cognify_content"
+    print("Loading PyTorch Models (Embedder & Reranker)...")
+    import torch
+    torch.set_num_threads(1) # Save memory
 
-try:
-    client.get_collection(COLLECTION_NAME)
-except Exception:
-    client.create_collection(
-        collection_name=COLLECTION_NAME,
-        vectors_config={"size": 384, "distance": "Cosine"}
+    embedder = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"}
     )
 
-vectorstore = QdrantVectorStore(
-    client=client,
-    collection_name=COLLECTION_NAME,
-    embedding=embedder
-)
+    qdrant_url = os.getenv("QDRANT_URL")
+    if qdrant_url:
+        client = QdrantClient(url=qdrant_url)
+    else:
+        qdrant_path = os.path.join(os.path.dirname(__file__), "..", "qdrant_db")
+        os.makedirs(qdrant_path, exist_ok=True)
+        client = QdrantClient(path=qdrant_path)
 
-# 3. Cross-encoder reranker
-reranker_model = HuggingFaceCrossEncoder(
-    model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
-)
-reranker = CrossEncoderReranker(model=reranker_model, top_n=5)
-retriever = ContextualCompressionRetriever(
-    base_compressor=reranker,
-    base_retriever=vectorstore.as_retriever(
-        search_kwargs={
-            "k": 20, 
-            "filter": models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="metadata.toxicity_score",
-                        range=models.Range(lt=0.3)
-                    )
-                ]
-            )
-        }
-    )
-)
+    COLLECTION_NAME = "cognify_content"
 
-# Initialize Local LLM via HuggingFacePipeline — LAZY LOADED (avoids 30-60s startup delay)
-_llm = None
-
-def get_llm():
-    global _llm
-    if _llm is None:
-        print("Loading TinyLlama (first use only)...")
-        _llm = HuggingFacePipeline.from_model_id(
-            model_id="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-            task="text-generation",
-            pipeline_kwargs={"max_new_tokens": 1024, "do_sample": False}
+    try:
+        client.get_collection(COLLECTION_NAME)
+    except Exception:
+        client.create_collection(
+            collection_name=COLLECTION_NAME,
+            vectors_config={"size": 384, "distance": "Cosine"}
         )
-    return _llm
 
+    vectorstore = QdrantVectorStore(
+        client=client,
+        collection_name=COLLECTION_NAME,
+        embedding=embedder
+    )
+
+    reranker_model = HuggingFaceCrossEncoder(
+        model_name="cross-encoder/ms-marco-MiniLM-L-6-v2"
+    )
+    reranker = CrossEncoderReranker(model=reranker_model, top_n=5)
+    _retriever = ContextualCompressionRetriever(
+        base_compressor=reranker,
+        base_retriever=vectorstore.as_retriever(
+            search_kwargs={
+                "k": 20, 
+                "filter": models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="metadata.toxicity_score",
+                            range=models.Range(lt=0.3)
+                        )
+                    ]
+                )
+            }
+        )
+    )
+    return _retriever
 
 QUERY_REWRITE_PROMPT = """
 Given a user's identity goal, generate 4 specific YouTube search queries
@@ -117,11 +111,12 @@ async def rewrite_goal_queries(goal: str) -> List[str]:
 
 async def rag_recommend(user_goals: List[str], emotional_state: Dict[str, Any], drift_score: float, limit: int = 5) -> List[Dict[str, Any]]:
     all_docs = []
+    retriever_instance = get_retriever()
     
     # Phase 1: Retrieve (Parallelized)
     async def process_goal(g: str):
         queries = await rewrite_goal_queries(g)
-        tasks = [retriever.ainvoke(q) for q in queries]
+        tasks = [retriever_instance.ainvoke(q) for q in queries]
         results = await asyncio.gather(*tasks)
         return [doc for docs in results for doc in docs]
 
@@ -145,8 +140,7 @@ async def rag_recommend(user_goals: List[str], emotional_state: Dict[str, Any], 
     context = "\n\n".join([d.page_content for d in unique_docs[:5]])
     user_context = f"Goals: {user_goals}, Emotion: {emotional_state}, Drift: {drift_score}"
     
-    template = """<|system|>
-You are an extremely strict, data-driven AI. You must strictly output JSON arrays of objects. 
+    system_prompt = """You are an extremely strict, data-driven AI. You must strictly output JSON arrays of objects. 
 CRITICAL INSTRUCTION: You may ONLY recommend videos that explicitly exist in the "Retrieved content". Do NOT invent or hallucinate video IDs, titles, or concepts. If the retrieved content cannot help achieve the user goals, return an empty JSON array []. 
 Do not write markdown. Do not write text outside the JSON. Return exactly {limit} recommendations based on the context.
 Format exactly like this:
@@ -157,31 +151,26 @@ Format exactly like this:
     "reason": "This helps because...",
     "alignment_score": 0.9
   }}
-]</s>
-<|user|>
-User context: {user_context}
-Retrieved content: {context}</s>
-<|assistant|>
-["""
+]"""
 
-    prompt = PromptTemplate.from_template(template)
-    chain = prompt | get_llm()
-
+    prompt = f"User context: {user_context}\nRetrieved content: {context}"
     
     try:
-        response = await chain.ainvoke({
-            "user_context": user_context,
-            "context": context,
-            "limit": limit
-        })
+        response_text = await call_llm(
+            prompt=prompt,
+            system=system_prompt.replace("{limit}", str(limit)),
+            redis_client=redis_client,
+            max_tokens=1000,
+            json_mode=True
+        )
         
-        # Clean up TinyLlama output
-        json_str = "[" + response.split("<|assistant|>\n[")[-1].strip()
-        # Find the last bracket to ensure valid JSON
-        if "]" in json_str:
-            json_str = json_str[:json_str.rfind("]")+1]
+        json_str = response_text.strip().replace("```json","").replace("```","").strip()
+        
+        # Fallback to extract array if llm included text
+        if "[" in json_str and "]" in json_str:
+            json_str = json_str[json_str.find("["):json_str.rfind("]")+1]
             
         return json.loads(json_str)
     except Exception as e:
-        print(f"Failed to parse TinyLlama output: {e}")
+        print(f"Failed to parse cloud LLM output: {e}")
         return []

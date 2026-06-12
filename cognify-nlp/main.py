@@ -29,6 +29,8 @@ async def lifespan(app: FastAPI):
 
     # 1. Load shared embedder (384-dim MiniLM, ~90MB, loads in ~3s)
     from langchain_huggingface import HuggingFaceEmbeddings
+    import torch
+    torch.set_num_threads(1)
     embedder = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2",
         model_kwargs={"device": "cpu"},
