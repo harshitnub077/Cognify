@@ -8,7 +8,7 @@
     "*://*.youtube.com/*",
     "*://*.instagram.com/*",
     "http://localhost:8001/*",
-    "http://localhost:3001/*",
+    "https://cognify-api-lin2.onrender.com/*",
     "http://localhost:5173/*",
     "http://localhost:5174/*"
   ],
