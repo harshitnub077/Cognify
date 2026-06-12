@@ -27,8 +27,12 @@ async def lifespan(app: FastAPI):
     """
     print("🚀 Cognify NLP API starting up...")
 
+    import os
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
-    embedder = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    embedder = GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001",
+        google_api_key=os.getenv("GEMINI_API_KEY", "")
+    )
     print("✅ Embedder loaded (sentence-transformers/all-MiniLM-L6-v2)")
 
     # 2. Connect to local Qdrant

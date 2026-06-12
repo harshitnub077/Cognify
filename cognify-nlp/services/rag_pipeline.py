@@ -21,7 +21,10 @@ def get_retriever():
     if _retriever is not None:
         return _retriever
 
-    embedder = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    embedder = GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001",
+        google_api_key=os.getenv("GEMINI_API_KEY", "")
+    )
 
     qdrant_url = os.getenv("QDRANT_URL")
     if qdrant_url:
