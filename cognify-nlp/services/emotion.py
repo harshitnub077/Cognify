@@ -1,6 +1,5 @@
-import requests
 import os
-from transformers import pipeline
+import requests
 
 HF_TOKEN = os.getenv("HF_TOKEN")
 API_URL = "https://api-inference.huggingface.co/models/j-hartmann/emotion-english-distilroberta-base"
@@ -29,24 +28,8 @@ def get_emotion(text: str) -> dict:
         except:
             pass
 
-    # 2. Try local transformers pipeline
-    global local_pipeline
-    try:
-        if local_pipeline is None:
-            # Load local model
-            local_pipeline = pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", top_k=None)
-        
-        results = local_pipeline(text)
-        scores = default_scores.copy()
-        for item in results[0]:
-            label = item['label'].lower()
-            if label in scores:
-                scores[label] = item['score']
-        dominant = max(scores, key=scores.get)
-        return {"emotions": scores, "dominant_emotion": dominant}
-    except Exception as e:
-        print(f"Local emotion pipeline failed: {e}")
-        pass
+    # 2. Local Transformers Pipeline Removed (OOM fix)
+    # Using Keyword Heuristic Fallback directly
 
     # 3. Keyword Heuristic Fallback
     text_lower = text.lower()
