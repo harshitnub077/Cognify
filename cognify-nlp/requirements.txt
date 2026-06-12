@@ -30,7 +30,7 @@ redis==5.0.6                   # optional — gracefully disabled if not running
 pydantic==2.7.4
 python-dotenv==1.0.1
 requests==2.32.3
-huggingface-hub==0.23.4
+huggingface-hub>=0.23.4
 
 # ── YouTube ───────────────────────────────────────────────────────────────────
 yt-dlp==2024.5.27              # transcript + metadata fetching (free)
