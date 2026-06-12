@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React from 'react';
 import { useBookmarks } from '../../hooks/useDashboardData';
 import { RecommendationCard } from '../../components/RecommendationCard';

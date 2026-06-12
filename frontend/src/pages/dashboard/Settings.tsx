@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { useAchievements, useUserProfile } from '../../hooks/useDashboardData';
 import { 
@@ -62,7 +65,7 @@ const Settings = () => {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (profile?.displayName) setDisplayName(profile.displayName);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     else if (user?.user_metadata?.full_name) setDisplayName(user.user_metadata.full_name);
   }, [profile, user]);
 

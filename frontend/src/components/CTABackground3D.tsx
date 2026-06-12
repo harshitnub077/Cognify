@@ -14,11 +14,11 @@ function ParticleRings() {
       const positions = new Float32Array(count * 3);
       for (let j = 0; j < count; j++) {
         const theta = (j / count) * Math.PI * 2;
-        // eslint-disable-next-line react-hooks/purity
+         
         positions[j * 3] = Math.cos(theta) * radius + (Math.random() - 0.5) * 0.4;
-        // eslint-disable-next-line react-hooks/purity
+         
         positions[j * 3 + 1] = (Math.random() - 0.5) * 0.4;
-        // eslint-disable-next-line react-hooks/purity
+         
         positions[j * 3 + 2] = Math.sin(theta) * radius + (Math.random() - 0.5) * 0.4;
       }
       arr.push(positions);

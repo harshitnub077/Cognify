@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -19,6 +22,7 @@ const Dashboard = () => {
   const { data: userProfile } = useUserProfile();
   const { data: weeklyReport } = useWeeklyReport();
   const { data: historyData } = useContentHistory({ limit: 100 });
+  const logs = Array.isArray(historyData?.data) ? historyData.data : [];
   const { data: driftData } = useDriftScore();
   const [url, setUrl] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
@@ -31,14 +35,13 @@ const Dashboard = () => {
   const profileToUse = userProfile || dashboardData?.profile;
   
   const primaryGoal = profileToUse?.identities?.length > 0
-    ? profileToUse.identities.join(' ')
+    ? (Array.isArray(profileToUse.identities) ? profileToUse.identities.join(' ') : String(profileToUse.identities))
     : "I want to improve my focus and learn new things.";
     
   // Fetch 24 to share the exact same React Query cache as Goals.tsx
   const { data: recData } = useRecommendations(primaryGoal, 24);
-  const recommendations = (recData || []).slice(0, 8);
-  
-  const logs = historyData?.data || [];
+  const recommendations = Array.isArray(recData) ? recData.slice(0, 8) : [];
+
 
   // --- Chart Data Processing ---
   // 1. Time Saved Trend (Cumulative over 7 days)

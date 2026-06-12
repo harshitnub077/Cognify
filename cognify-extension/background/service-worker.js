@@ -85,7 +85,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return;
         }
 
-        const response = await fetch('https://cognify-api-lin2.onrender.com/api/content/analyze', {
+        const response = await fetch('http://localhost:3001/api/content/analyze', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -151,7 +151,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           exclude: message.exclude ? message.exclude.join(',') : ''
         }).toString();
 
-        const response = await fetch(`https://cognify-api-lin2.onrender.com/api/recommendations?${queryParams}`, {
+        const response = await fetch(`http://localhost:3001/api/recommendations?${queryParams}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${cognify_token}`
@@ -185,7 +185,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const { cognify_token } = await chrome.storage.local.get('cognify_token');
         if (!cognify_token) return;
 
-        await fetch('https://cognify-api-lin2.onrender.com/api/content/time', {
+        await fetch('http://localhost:3001/api/content/time', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

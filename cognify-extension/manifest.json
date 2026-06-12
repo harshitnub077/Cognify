@@ -10,7 +10,8 @@
     "http://localhost:8001/*",
     "https://cognify-api-lin2.onrender.com/*",
     "http://localhost:5173/*",
-    "http://localhost:5174/*"
+    "http://localhost:5174/*",
+    "http://localhost:3000/*"
   ],
   "icons": {
     "16": "icons/icon-16.png",
@@ -34,7 +35,7 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["http://localhost:5173/*", "http://localhost:5174/*"],
+      "matches": ["http://localhost:5173/*", "http://localhost:5174/*", "http://localhost:3000/*"],
       "js": ["content/sync-auth.js"],
       "run_at": "document_idle"
     }
