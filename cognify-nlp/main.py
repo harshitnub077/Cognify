@@ -98,6 +98,11 @@ ALLOWED_ORIGINS = [
     "http://localhost:3001",   # backend (for internal calls)
 ]
 
+# Add production frontend URL if configured
+prod_origin = os.getenv("FRONTEND_URL")
+if prod_origin:
+    ALLOWED_ORIGINS.append(prod_origin)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,

@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import prisma from '../lib/prisma';
 import { analysisQueue } from '../lib/queue';
+import { generalRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
 // Route to sync Supabase user with our database and fetch their profile
-router.post('/sync', requireAuth, async (req: AuthRequest, res) => {
+router.post('/sync', requireAuth, generalRateLimiter, async (req: AuthRequest, res) => {
   try {
     const user = req.user;
     if (!user) {
@@ -44,7 +45,7 @@ router.post('/sync', requireAuth, async (req: AuthRequest, res) => {
 });
 
 // Update Profile (Onboarding)
-router.post('/profile', requireAuth, async (req: AuthRequest, res) => {
+router.post('/profile', requireAuth, generalRateLimiter, async (req: AuthRequest, res) => {
   try {
     const { focusAreas, onboarded } = req.body;
     const userId = req.user.id;

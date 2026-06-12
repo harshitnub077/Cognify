@@ -78,24 +78,24 @@ async def generate_insight_and_score(title: str, goals: list[str], transcript: s
     User Goals: {goals}
     Transcript summary: {transcript[:1000] if transcript else 'No transcript available.'}
     
-    Evaluate how this aligns with the user goals. 
+    Evaluate how strictly this video aligns with the user's specific goals. 
     
     CRITICAL DIRECTIVES:
-    1. TOPICAL ALIGNMENT IS ALL THAT MATTERS: If the video is in the SAME broad topic domain as the user's goals, you MUST give it a VERY HIGH score (85-100) and a "watch" verdict.
-    2. NEVER PENALIZE FOR DEPTH: Do NOT penalize content for being introductory, high-level, or an overview, even if the user specifies "Advanced" goals. For example, if the goal is "Advanced Machine Learning" and the video is "Machine Learning explained in 17 min", it is a 95% match. Overviews are relevant to mastery. Never say it "lacks depth."
-    3. PENALIZE ONLY DISTRACTIONS: Only give a low score (< 30) and a "skip" verdict if the content is entirely unrelated to the goals (e.g., gaming, drama, unboxing).
+    1. BE STRICT AND EMPIRICAL: The video must directly and obviously address the user's goals. Do NOT hallucinate connections, extrapolate, or broadly link unrelated fields (e.g., do not link "no-code app building" to "machine learning" unless the video explicitly teaches machine learning).
+    2. PENALIZE MISALIGNMENT: If the video is tangential, generic, or off-topic, assign a low score (< 50) and a "skip" or "caution" verdict. 
+    3. NO FALSE ENCOURAGEMENT: Do not invent reasons for why the user should watch it if it doesn't align with their explicit goals. Be honest and ruthless in your assessment.
     
     Return JSON only:
     {{
-        "score": 95,
-        "verdict": "watch",
-        "text": "1-sentence encouraging explanation of how it aligns with or supports the goals."
+        "score": <0-100>,
+        "verdict": "watch" | "caution" | "skip",
+        "text": "1-sentence strict and factual explanation of why it aligns or misaligns with the goals."
     }}
     """
     try:
         response_text = await call_llm(
             prompt=prompt,
-            system="You are a highly nuanced, supportive AI that evaluates video alignment to goals. You recognize that foundational overviews are highly relevant to advanced mastery. Return only JSON.",
+            system="You are a strict, empirical AI content evaluator. You ruthlessly judge whether content directly aligns with user goals without hallucinating connections. Return only JSON.",
             redis_client=redis_client,
             max_tokens=300,
             json_mode=True

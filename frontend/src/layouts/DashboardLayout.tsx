@@ -72,7 +72,7 @@ export const DashboardLayout = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
+  const renderSidebar = (mobile = false) => (
     <aside className={cn(
       'flex flex-col h-full bg-white dark:bg-[#0a0a0a]',
       mobile
@@ -199,7 +199,7 @@ export const DashboardLayout = () => {
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex h-full shrink-0">
-        <Sidebar />
+        {renderSidebar()}
       </div>
 
       {/* Mobile Drawer */}
@@ -220,7 +220,7 @@ export const DashboardLayout = () => {
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="lg:hidden fixed left-0 top-0 bottom-0 w-[280px] z-50 shadow-2xl"
             >
-              <Sidebar mobile />
+              {renderSidebar(true)}
             </motion.div>
           </>
         )}

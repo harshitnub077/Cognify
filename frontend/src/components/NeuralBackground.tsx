@@ -2,7 +2,6 @@ import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// ─── Node Positions Generator ────────────────────────────────────────────────
 function buildNodePositions(count: number, spread: number) {
   const arr: number[] = [];
   for (let i = 0; i < count; i++) {
@@ -15,7 +14,6 @@ function buildNodePositions(count: number, spread: number) {
   return arr;
 }
 
-// ─── Edge Builder ────────────────────────────────────────────────────────────
 function buildEdges(nodes: number[], threshold: number) {
   const count = nodes.length / 3;
   const edges: number[] = [];
@@ -24,8 +22,7 @@ function buildEdges(nodes: number[], threshold: number) {
       const dx = nodes[i * 3] - nodes[j * 3];
       const dy = nodes[i * 3 + 1] - nodes[j * 3 + 1];
       const dz = nodes[i * 3 + 2] - nodes[j * 3 + 2];
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      if (dist < threshold) {
+      if (dx * dx + dy * dy + dz * dz < threshold * threshold) {
         edges.push(nodes[i * 3], nodes[i * 3 + 1], nodes[i * 3 + 2]);
         edges.push(nodes[j * 3], nodes[j * 3 + 1], nodes[j * 3 + 2]);
       }
@@ -34,13 +31,13 @@ function buildEdges(nodes: number[], threshold: number) {
   return edges;
 }
 
-// ─── Neural Scene ────────────────────────────────────────────────────────────
 function NeuralScene() {
   const groupRef = useRef<THREE.Group>(null!);
   const sphereRef = useRef<THREE.Mesh>(null!);
   const pointsRef = useRef<THREE.Points>(null!);
 
-  const NODE_COUNT = 200;
+  // Reduced from 200 → 120 nodes for better perf
+  const NODE_COUNT = 120;
   const SPREAD = 12;
   const EDGE_THRESHOLD = 2.4;
 
@@ -66,21 +63,19 @@ function NeuralScene() {
     return geo;
   }, [edgePosArr]);
 
-  // Bright glowing nodes
   const nodeMat = useMemo(() => new THREE.PointsMaterial({
-    size: 0.08,
+    size: 0.07,
     color: '#ffffff',
     transparent: true,
-    opacity: 0.9,
+    opacity: 0.85,
     sizeAttenuation: true,
     blending: THREE.AdditiveBlending,
   }), []);
 
-  // Faint data connections
   const edgeMat = useMemo(() => new THREE.LineBasicMaterial({
     color: '#94a3b8',
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.35,
     blending: THREE.AdditiveBlending,
   }), []);
 
@@ -89,38 +84,29 @@ function NeuralScene() {
     color: '#334155',
     wireframe: true,
     transparent: true,
-    opacity: 0.15,
+    opacity: 0.12,
     blending: THREE.AdditiveBlending,
   }), []);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-    
     if (groupRef.current) {
-      groupRef.current.rotation.y = t * 0.05;
-      groupRef.current.rotation.x = Math.sin(t * 0.02) * 0.1;
+      groupRef.current.rotation.y = t * 0.04;
+      groupRef.current.rotation.x = Math.sin(t * 0.018) * 0.08;
     }
-    
-    // Simulate "drift tracking" by slowly moving nodes
-    if (pointsRef.current) {
+    // Animate only every other frame for node drift — halves CPU cost
+    if (pointsRef.current && Math.round(t * 60) % 2 === 0) {
       const positions = pointsRef.current.geometry.attributes.position as THREE.BufferAttribute;
       for (let i = 0; i < NODE_COUNT; i++) {
-        const ix = i * 3;
-        const iy = i * 3 + 1;
-        const iz = i * 3 + 2;
-        // Subtle drift oscillation
-        positions.array[ix] = initialPos[ix] + Math.sin(t * 0.5 + initialPos[iy]) * 0.2;
-        positions.array[iy] = initialPos[iy] + Math.cos(t * 0.3 + initialPos[ix]) * 0.2;
+        const ix = i * 3, iy = ix + 1;
+        positions.array[ix] = initialPos[ix] + Math.sin(t * 0.4 + initialPos[iy]) * 0.18;
+        positions.array[iy] = initialPos[iy] + Math.cos(t * 0.25 + initialPos[ix]) * 0.18;
       }
       positions.needsUpdate = true;
     }
-
-    // Core intent sphere pulsing
     if (sphereRef.current) {
-      const pulse = 1 + Math.sin(t * 1.5) * 0.03;
-      sphereRef.current.scale.setScalar(pulse);
-      sphereRef.current.rotation.y = t * 0.1;
-      sphereRef.current.rotation.z = t * 0.05;
+      sphereRef.current.scale.setScalar(1 + Math.sin(t * 1.2) * 0.025);
+      sphereRef.current.rotation.y = t * 0.08;
     }
   });
 
@@ -135,21 +121,23 @@ function NeuralScene() {
   );
 }
 
-// ─── Export ──────────────────────────────────────────────────────────────────
-const NeuralBackground: React.FC = () => {
-  return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none z-[1] opacity-50">
-      <Canvas
-        camera={{ position: [0, 0, 9], fov: 60 }}
-        style={{ background: 'transparent' }}
-        gl={{ antialias: true, alpha: true }}
-        dpr={[1, 1.5]}
-      >
-        <fog attach="fog" args={['#050505', 4, 15]} />
-        <NeuralScene />
-      </Canvas>
-    </div>
-  );
-};
+const NeuralBackground: React.FC = () => (
+  <div className="absolute inset-0 w-full h-full pointer-events-none z-[1] opacity-50">
+    <Canvas
+      camera={{ position: [0, 0, 9], fov: 60 }}
+      style={{ background: 'transparent' }}
+      gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
+      dpr={[1, 1]}
+      frameloop="always"
+    >
+      <fog attach="fog" args={['#050505', 4, 15]} />
+      <NeuralScene />
+    </Canvas>
+    
+    {/* Seamless edge fades to blend with surrounding sections */}
+    <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-[#050505] via-[#050505]/90 to-transparent z-10" />
+    <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#050505] via-[#050505]/90 to-transparent z-10" />
+  </div>
+);
 
 export default NeuralBackground;

@@ -90,6 +90,8 @@ model Streak {
   currentCount Int      @default(0)
   bestCount    Int      @default(0)
   lastUpdate   DateTime @default(now())
+
+  @@index([userId])
 }
 
 model CoachSession {
@@ -111,6 +113,8 @@ model CoachMessage {
   content   String
   reaction  String? // 'helpful', 'think'
   createdAt DateTime     @default(now())
+
+  @@index([sessionId])
 }
 
 model Bookmark {
@@ -163,4 +167,5 @@ model CircleMember {
   joinedAt DateTime @default(now())
 
   @@unique([circleId, userId])
+  @@index([userId])
 }

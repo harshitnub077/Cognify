@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, useInView, useScroll, useTransform, AnimatePresence, useMotionValueEvent, useMotionTemplate, useSpring } from 'framer-motion';
+import { motion, useInView, useScroll, useTransform, AnimatePresence, useMotionValueEvent } from 'framer-motion';
 import { Logo } from '../components/Logo';
 import { useAuthStore } from '../store/useAuthStore';
 import { supabase } from '../lib/supabase';
@@ -8,15 +8,18 @@ import toast from 'react-hot-toast';
 import { cn } from '../lib/utils';
 import api from '../lib/api';
 import NeuralBackground from '../components/NeuralBackground';
+import Extension3DBackground from '../components/Extension3DBackground';
+import FeatureBackground from '../components/FeatureBackground';
+import ArchitectureBackground from '../components/ArchitectureBackground';
 import { SmoothScroll } from '../components/SmoothScroll';
 import { CustomCursor } from '../components/CustomCursor';
 import dashboardHeroImg from '../assets/dashboard-hero.png';
 import {
-  IconArrowRight, IconShieldLock, IconBrain, IconTargetArrow, IconLock,
-  IconSparkles, IconEye, IconCpu, IconActivity, IconChevronRight,
-  IconStar, IconBolt, IconNetwork, IconRadar, IconZoomScan,
+  IconArrowRight, IconShieldLock, IconBrain, IconTargetArrow,
+  IconCpu, IconActivity,
+  IconStar,
   IconBrandChrome, IconArrowUpRight, IconCheck, IconSettings, IconShieldCheck,
-  IconFolder, IconFileZip, IconPuzzle
+  IconFileZip, IconPuzzle
 } from '@tabler/icons-react';
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -27,7 +30,7 @@ function Reveal({ children, delay = 0, className, yOffset = 40 }: { children: Re
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-10%' });
   return (
-    <motion.div ref={ref} className={className} initial={{ opacity: 0, y: yOffset }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 1.2, ease, delay }}>{children}</motion.div>
+    <motion.div ref={ref} className={className} initial={{ opacity: 0, y: yOffset }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.9, ease, delay }}>{children}</motion.div>
   );
 }
 
@@ -69,70 +72,43 @@ function HoverCard({ children, className }: { children: React.ReactNode, classNa
   );
 }
 
+// ─── Memoized Telemetry Grid (avoids Math.random() on every render) ──────────
+const TELEMETRY_CELLS = Array.from({ length: 120 }, (_, i) => {
+  const r1 = Math.random();
+  const r2 = Math.random();
+  return r1 > 0.85 ? 'high' : r2 > 0.5 ? 'med' : 'low';
+});
+
+function TelemetryGrid() {
+  return (
+    <div className="flex-1 flex items-center justify-center relative w-full mt-auto">
+      <div className="w-[120%] flex flex-wrap justify-center gap-1.5 opacity-60 group-hover:scale-105 group-hover:-rotate-2 transition-transform duration-[1.5s] ease-out z-10">
+        {TELEMETRY_CELLS.map((level, i) => (
+          <div
+            key={i}
+            className={cn(
+              "w-2.5 h-2.5 rounded-[2px]",
+              level === 'high' ? "bg-white/[0.28] group-hover:bg-white/[0.45]" : level === 'med' ? "bg-white/[0.08]" : "bg-white/[0.02]"
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FeatureShowcase() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start end', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], [30, -30]);
 
   return (
-    <section id="features" ref={containerRef} className="pt-24 md:pt-32 pb-16 px-6 relative z-10 overflow-hidden perspective-[2000px]">
-      {/* Black Background blending with upper #050505 section */}
-      <div className="absolute inset-0 bg-black z-0 pointer-events-none" />
-      <div className="absolute top-0 left-0 right-0 h-[250px] bg-gradient-to-b from-[#050505] to-black z-0 pointer-events-none" />
+    <section id="features" ref={containerRef} className="pt-8 md:pt-16 pb-4 md:pb-8 px-6 relative z-10 overflow-hidden perspective-[2000px] -mt-24 md:-mt-48">
+      {/* 3D Feature Background — perspective grid + data nodes */}
+      <FeatureBackground />
 
-      {/* --- CRAZY CYBER TRANSITION (Theme Matched) --- */}
-      <div className="absolute top-0 left-0 w-full h-[500px] pointer-events-none z-10 flex flex-col items-center">
-        {/* Core glowing line */}
-        <motion.div 
-          initial={{ scaleX: 0, opacity: 0 }}
-          whileInView={{ scaleX: 1, opacity: 1 }}
-          viewport={{ once: false, margin: "-100px" }}
-          transition={{ duration: 1.5, ease: "circOut" }}
-          className="absolute top-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400 to-transparent opacity-80" 
-        />
-        <motion.div 
-          initial={{ scaleX: 0, opacity: 0 }}
-          whileInView={{ scaleX: 1, opacity: 1 }}
-          viewport={{ once: false, margin: "-100px" }}
-          transition={{ duration: 1.5, delay: 0.2, ease: "circOut" }}
-          className="absolute top-0 w-3/4 h-[3px] bg-gradient-to-r from-transparent via-slate-200 to-transparent blur-[4px] mix-blend-screen" 
-        />
-        <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: false, margin: "-100px" }}
-          transition={{ duration: 2 }}
-          className="absolute top-[-100px] w-[600px] h-[200px] bg-slate-500/20 blur-[80px] rounded-[100%] mix-blend-screen" 
-        />
-        
-        {/* Animated Light Sweep */}
-        <div className="absolute top-[-10px] w-full overflow-hidden h-[100px] flex justify-center">
-          <motion.div 
-             animate={{ x: ["-200%", "200%"] }}
-             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-             className="absolute top-[10px] w-[25%] h-[2px] bg-gradient-to-r from-transparent via-white to-transparent blur-[2px]"
-          />
-        </div>
-
-        {/* 3D Perspective Tech Grid */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: false, margin: "-50px" }}
-          transition={{ duration: 2, ease: "easeOut" }}
-          className="absolute top-0 w-[200%] h-[400px] bg-[linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:50px_50px]" 
-          style={{ 
-            transformPerspective: '1000px', 
-            transformOrigin: 'top center',
-            rotateX: '75deg',
-            maskImage: 'radial-gradient(ellipse at top center, black 0%, transparent 60%)',
-            WebkitMaskImage: 'radial-gradient(ellipse at top center, black 0%, transparent 60%)'
-          }} 
-        />
-      </div>
-      
-      <motion.div style={{ y }} className="max-w-6xl mx-auto relative z-10">
-        <div className="flex flex-col items-center text-center mb-10 relative">
+      <motion.div style={{ y }} className="max-w-6xl mx-auto relative z-10 transform-gpu">
+        <div className="flex flex-col items-center text-center mb-10 relative mt-12 md:mt-24">
           <Reveal yOffset={40} className="relative z-10">
             <Pill icon={IconTargetArrow} label="Cognitive Engine" />
             <h2 className="font-display font-semibold text-white tracking-tight mt-5 mb-4 leading-tight" style={{ fontSize: 'clamp(2rem, 3vw, 3rem)' }}>
@@ -181,17 +157,7 @@ function FeatureShowcase() {
                  <h3 className="text-lg font-display font-semibold text-white mb-1">Identity Telemetry</h3>
                  <p className="text-xs text-slate-400 leading-relaxed max-w-[85%]">Visualize your entire cognitive footprint and hidden attention graph.</p>
                </div>
-               <div className="flex-1 flex items-center justify-center relative w-full mt-auto">
-                 <div className="w-[120%] flex flex-wrap justify-center gap-1.5 opacity-60 group-hover:scale-105 group-hover:-rotate-2 transition-transform duration-[1.5s] ease-out z-10">
-                   {Array.from({length: 120}).map((_, i) => {
-                     const isHigh = Math.random() > 0.85;
-                     const isMed = Math.random() > 0.5;
-                     return (
-                       <div key={i} className={cn("w-2.5 h-2.5 rounded-[2px] transition-colors duration-1000", isHigh ? "bg-white/[0.3] group-hover:bg-indigo-500/40 shadow-[0_0_10px_rgba(255,255,255,0.1)]" : isMed ? "bg-white/[0.08]" : "bg-white/[0.02]")} />
-                     );
-                   })}
-                 </div>
-               </div>
+               <TelemetryGrid />
              </HoverCard>
            </Reveal>
 
@@ -261,21 +227,9 @@ function OverviewSection() {
   const y = useTransform(scrollYProgress, [0, 1], [50, -50]);
 
   return (
-    <section id="methodology" ref={containerRef} className="pt-24 pb-24 px-6 relative z-10 overflow-hidden">
-       {/* THEME-MATCHED AMBIENT BACKGROUND */}
-       <div className="absolute inset-0 flex items-center justify-center opacity-[0.3] pointer-events-none">
-         {/* Soft floating blurred orbs */}
-         <motion.div
-           animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.7, 0.4] }}
-           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute w-[500px] md:w-[800px] h-[500px] md:h-[800px] bg-slate-400/10 rounded-full blur-[120px] mix-blend-screen"
-         />
-         <motion.div
-           animate={{ x: [30, -30, 30], y: [-30, 30, -30] }}
-           transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-white/[0.03] rounded-full blur-[100px] mix-blend-screen"
-         />
-       </div>
+    <section id="methodology" ref={containerRef} className="pt-12 md:pt-16 pb-12 px-6 relative z-10 overflow-hidden -mt-12 md:-mt-24">
+       {/* 3D minimalist constellation background */}
+       <Extension3DBackground />
 
        <motion.div style={{ y }} className="max-w-6xl mx-auto relative z-10">
          <Reveal className="text-center mb-20" yOffset={60}>
@@ -333,9 +287,9 @@ function OverviewSection() {
                <AnimatePresence>
                   <motion.div
                     key={activeTab}
-                    initial={{ opacity: 0, scale: 0.95, filter: 'blur(8px)', y: 20 }}
-                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)', y: 0 }}
-                    exit={{ opacity: 0, scale: 1.05, filter: 'blur(8px)', y: -20 }}
+                    initial={{ opacity: 0, scale: 0.97, y: 16 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 1.02, y: -16 }}
                     transition={{ duration: 0.6, ease: slowEase }}
                     className="absolute inset-0 rounded-3xl border border-white/[0.05] bg-[#070707] p-2 md:p-3 overflow-hidden shadow-2xl flex items-center justify-center"
                   >
@@ -351,125 +305,232 @@ function OverviewSection() {
 
 
 
+// ─── Extension Install Step Card ──────────────────────────────────────────
+function StepCard({ step, index }: { step: { num: string; title: string; desc: string; icon: any }; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-5%' });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 1, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <HoverCard className="relative flex flex-col items-center text-center p-8 rounded-3xl bg-[#050505] border border-white/[0.05] hover:border-white/[0.1] transition-colors shadow-[0_8px_40px_rgba(0,0,0,0.5)] overflow-hidden group">
+        {/* Subtle top edge shimmer */}
+        <div className="absolute top-0 left-[25%] right-[25%] h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+
+        {/* Step number watermark */}
+        <div className="absolute top-5 right-6 font-mono text-[42px] font-black text-white/[0.025] select-none leading-none">{step.num}</div>
+
+        {/* Icon */}
+        <div className="w-16 h-16 rounded-2xl bg-[#080808] border border-white/[0.06] flex items-center justify-center mb-6 relative shadow-inner group-hover:border-white/[0.1] transition-colors duration-500">
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <step.icon size={26} className="text-slate-400 group-hover:text-slate-200 relative z-10 transition-colors duration-500" stroke={1.5} />
+        </div>
+
+        {/* Step label */}
+        <span className="text-[9px] font-mono text-slate-600 font-semibold tracking-[0.25em] uppercase mb-3">STEP {step.num}</span>
+
+        <h3 className="text-base font-display font-semibold text-white mb-2 leading-snug">{step.title}</h3>
+        <p className="text-sm text-slate-500 leading-relaxed font-light">{step.desc}</p>
+      </HoverCard>
+    </motion.div>
+  );
+}
+
+// ─── Live Extension Preview Card ───────────────────────────────────────────
+function ExtensionPreviewCard() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-10%' });
+
+  const logs = [
+    { label: 'tab_url', value: '"youtube.com/shorts/abc"', color: 'text-slate-300' },
+    { label: 'analyzing', value: 'semantic vectors...', color: 'text-slate-500' },
+    { label: 'goal_match', value: 'false', color: 'text-slate-400' },
+    { label: 'drift_score', value: '0.92  HIGH', color: 'text-slate-300' },
+    { label: 'action', value: 'INTERCEPT triggered', color: 'text-white' },
+  ];
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 50 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+      className="mt-16 md:mt-24 relative"
+    >
+      {/* Ambient glow */}
+      <div className="absolute inset-x-[15%] top-[10%] bottom-0 blur-[100px] bg-slate-500/[0.06] rounded-full pointer-events-none" />
+
+      <div className="relative max-w-2xl mx-auto">
+        {/* Label pill */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.5, duration: 0.6 }}
+          className="flex justify-center mb-6"
+        >
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/[0.07] bg-white/[0.025] text-[10px] font-semibold text-slate-400 tracking-[0.15em] uppercase backdrop-blur-md">
+            <div className="w-1.5 h-1.5 rounded-full bg-white/30" />
+            Live Intercept Preview
+          </div>
+        </motion.div>
+
+        {/* Browser chrome */}
+        <motion.div
+          className="rounded-2xl border border-white/[0.06] bg-[#050505] overflow-hidden shadow-[0_20px_80px_rgba(0,0,0,0.7)]"
+          whileHover={{ y: -4 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 28 }}
+        >
+          {/* Title bar */}
+          <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.04] bg-[#030303]">
+            <div className="flex gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-white/[0.06]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-white/[0.06]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-white/[0.06]" />
+            </div>
+            <div className="flex-1 mx-3 h-6 rounded-md bg-white/[0.03] border border-white/[0.04] flex items-center px-3 gap-2">
+              <IconShieldLock size={9} className="text-slate-700" />
+              <span className="text-[10px] font-mono text-slate-600">youtube.com/shorts/xH2z...</span>
+            </div>
+            <div className="w-5 h-5 rounded flex items-center justify-center bg-white/[0.03] border border-white/[0.05]">
+              <IconPuzzle size={10} className="text-slate-600" />
+            </div>
+          </div>
+
+          {/* Two-pane */}
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            {/* Left: blurred distraction */}
+            <div className="relative p-5 border-r border-white/[0.03] min-h-[180px] overflow-hidden">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="mb-2.5 rounded-full bg-white/[0.04] h-2" style={{ width: `${50 + Math.sin(i * 1.1) * 38}%`, opacity: 0.5 - i * 0.05 }} />
+              ))}
+              <div className="mt-4 w-full h-16 rounded-lg bg-white/[0.02] border border-white/[0.03]" />
+              <div className="absolute inset-0 backdrop-blur-[2px] bg-black/40 flex items-center justify-center">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] text-[10px] font-mono text-slate-400">
+                  DRIFT DETECTED
+                </div>
+              </div>
+            </div>
+
+            {/* Right: cognify panel */}
+            <div className="p-5 flex flex-col gap-3">
+              <div className="flex items-center gap-2 mb-1">
+                <motion.div
+                  className="w-1.5 h-1.5 rounded-full bg-white/40"
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+                <span className="text-[9px] font-mono text-slate-600 tracking-[0.2em] font-semibold uppercase">Cognify Active</span>
+              </div>
+
+              <div className="font-mono text-[10px] leading-loose space-y-0.5">
+                {logs.map((log, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={inView ? { opacity: 1, x: 0 } : {}}
+                    transition={{ delay: 0.6 + i * 0.15, duration: 0.5 }}
+                    className="flex gap-2"
+                  >
+                    <span className="text-slate-700">{log.label}:</span>
+                    <span className={log.color}>{log.value}</span>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Intervention — matches existing Socratic card */}
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: 1.4, duration: 0.6 }}
+                className="mt-1 p-3 rounded-xl bg-[#080808] border border-white/[0.07]"
+              >
+                <div className="text-[11px] font-medium text-slate-200 mb-2.5 leading-relaxed">
+                  Wait. Is this aligned with your goal to "Ship v1.0"?
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1 h-7 rounded-md bg-white text-black flex items-center justify-center text-[10px] font-bold cursor-pointer hover:bg-slate-100 transition-colors">Reflect</div>
+                  <div className="flex-1 h-7 rounded-md bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-[10px] text-slate-500 cursor-pointer">Continue</div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Status bar */}
+          <div className="flex items-center justify-between px-5 py-2 border-t border-white/[0.04] bg-[#030303]">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-1 rounded-full bg-white/[0.15]" />
+              <span className="text-[9px] font-mono text-slate-700">Local-first · Zero data leaves your device</span>
+            </div>
+            <span className="text-[9px] font-mono text-slate-800">cognify v1.0.0</span>
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Extension Section ─────────────────────────────────────────────────────
 function ExtensionSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start end', 'end start'] });
-  const y = useTransform(scrollYProgress, [0, 1], [50, -50]);
+  const y = useTransform(scrollYProgress, [0, 1], [40, -40]);
+
+  const steps = [
+    { num: '01', title: 'Download & Extract', desc: 'Download the cognify.zip file below and extract it to a permanent folder on your computer.', icon: IconFileZip },
+    { num: '02', title: 'Developer Mode', desc: 'Open a new tab to chrome://extensions and toggle "Developer mode" on in the top right.', icon: IconSettings },
+    { num: '03', title: 'Load Unpacked', desc: 'Click "Load unpacked", select your extracted folder, and pin the Cognify puzzle icon.', icon: IconPuzzle },
+  ];
 
   return (
-    <section id="extension" ref={containerRef} className="pt-12 md:pt-16 pb-24 px-6 relative z-10 overflow-hidden perspective-[2000px] -mt-4 md:-mt-8">
-      {/* Seamless Blending Gradients (Top and Bottom) */}
-      <div className="absolute top-0 left-0 right-0 h-[250px] bg-gradient-to-b from-[#050505] via-[#050505]/80 to-transparent pointer-events-none z-10" />
-      <div className="absolute bottom-0 left-0 right-0 h-[250px] bg-gradient-to-t from-[#050505] via-[#050505]/80 to-transparent pointer-events-none z-10" />
+    <section id="extension" ref={containerRef} className="-mt-8 md:-mt-12 pt-12 md:pt-16 pb-16 px-6 relative z-10 overflow-hidden">
 
-      {/* Ultra-Premium Architectural Glass & Light Background */}
-      <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center overflow-hidden">
-        
-        {/* Deep, Breathing Ambient Mesh Gradients */}
-        <motion.div 
-          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-10%] right-[10%] w-[600px] md:w-[1000px] aspect-square bg-slate-500/10 blur-[150px] rounded-full mix-blend-screen will-change-transform" 
-        />
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.3, 0.1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute bottom-[-10%] left-[10%] w-[800px] md:w-[1200px] aspect-square bg-white/5 blur-[150px] rounded-full mix-blend-screen will-change-transform" 
-        />
+      {/* Perspective grid + data nodes background */}
+      <ArchitectureBackground />
 
-        {/* THEME-MATCHED AMBIENT BACKGROUND */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.4] pointer-events-none">
-          {/* Soft floating blurred orbs matching the hero section */}
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute w-[600px] md:w-[800px] h-[600px] md:h-[800px] bg-slate-500/20 rounded-full blur-[120px] mix-blend-screen"
-          />
-          <motion.div
-            animate={{ x: [-50, 50, -50], y: [-50, 50, -50] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-slate-300/10 rounded-full blur-[100px] mix-blend-screen"
-          />
-        </div>
-      </div>
+      <motion.div style={{ y }} className="max-w-6xl mx-auto relative z-10 transform-gpu">
 
-      <motion.div style={{ y }} className="max-w-6xl mx-auto relative z-10">
-        <Reveal className="text-center mb-16" yOffset={40}>
+        {/* Header */}
+        <Reveal className="flex flex-col items-center text-center mb-16 md:mb-20" yOffset={40}>
           <Pill icon={IconBrandChrome} label="Browser Extension" />
-          <h2 className="font-display font-semibold text-white tracking-tight mt-5 mb-4 leading-tight" style={{ fontSize: 'clamp(2rem, 3vw, 3rem)' }}>
-            Your cognitive <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-500">firewall.</span>
+
+          <h2
+            className="font-display font-semibold text-white tracking-tight mt-5 mb-4 leading-tight"
+            style={{ fontSize: 'clamp(2rem, 3vw, 3rem)' }}
+          >
+            Your cognitive{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-500">
+              firewall.
+            </span>
           </h2>
+
           <p className="text-slate-400 text-sm max-w-lg mx-auto leading-relaxed">
-            Install the extension to activate real-time semantic drift analysis across your entire browser.
+            Activate real-time semantic drift analysis across your browser. Download the extension to intercept distractions before they derail your focus.
           </p>
+
+          {/* White CTA — matches hero & feature sections */}
+          <a
+            href="/cognify-extension.zip"
+            download="cognify-extension.zip"
+            className="group/btn relative h-14 px-10 bg-white text-black font-bold text-[14px] rounded-full flex items-center justify-center gap-3 hover:bg-slate-100 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.12)] mt-8"
+          >
+            <IconBrandChrome size={20} className="group-hover/btn:rotate-12 transition-transform duration-300" />
+            Download for Chrome
+            <div className="absolute inset-0 rounded-full border border-white/30 scale-105 opacity-0 group-hover/btn:opacity-100 group-hover/btn:scale-[1.1] transition-all duration-500" />
+          </a>
         </Reveal>
 
-        <Reveal yOffset={40}>
-          <div className="w-full max-w-5xl mx-auto bg-[#050505]/50 backdrop-blur-xl border border-white/[0.05] rounded-[2rem] overflow-hidden shadow-2xl relative group">
-            {/* Ambient inner glow */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/[0.05] relative z-10">
-              {/* Step 1 */}
-              <div className="p-8 md:p-12 relative overflow-hidden group/step bg-transparent hover:bg-white/[0.01] transition-colors duration-500">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/[0.2] to-transparent opacity-0 group-hover/step:opacity-100 transition-opacity duration-500" />
-                
-                {/* Elegant Icon Container */}
-                <div className="mb-8 w-16 h-16 rounded-2xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.05] flex items-center justify-center relative group-hover/step:scale-110 transition-transform duration-500 shadow-[0_0_30px_rgba(255,255,255,0.02)] group-hover/step:shadow-[0_0_40px_rgba(255,255,255,0.05)]">
-                  <div className="absolute inset-0 rounded-2xl bg-white/[0.01] opacity-0 group-hover/step:opacity-100 transition-opacity duration-500" />
-                  <IconFileZip size={28} className="text-slate-300 relative z-10" stroke={1.5} />
-                </div>
+        {/* Install Steps */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+          <div className="hidden md:block absolute top-8 left-[calc(16.66%+40px)] right-[calc(16.66%+40px)] h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent z-0" />
+          {steps.map((step, i) => (
+            <StepCard key={i} step={step} index={i} />
+          ))}
+        </div>
 
-                <div className="text-[10px] font-mono text-slate-500 tracking-[0.2em] mb-4 uppercase">STEP 01</div>
-                <h3 className="text-lg font-display font-medium text-white mb-3">Download & Extract</h3>
-                <p className="text-sm text-slate-400 leading-relaxed font-light">
-                  Click the download button below. Locate the <code className="text-slate-300 bg-white/[0.05] px-1.5 py-0.5 rounded text-[11px] font-mono">cognify.zip</code> file and extract it to a permanent folder.
-                </p>
-              </div>
-
-              {/* Step 2 */}
-              <div className="p-8 md:p-12 relative overflow-hidden group/step bg-transparent hover:bg-white/[0.01] transition-colors duration-500">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/[0.2] to-transparent opacity-0 group-hover/step:opacity-100 transition-opacity duration-500" />
-                
-                {/* Elegant Icon Container */}
-                <div className="mb-8 w-16 h-16 rounded-2xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.05] flex items-center justify-center relative group-hover/step:scale-110 transition-transform duration-500 shadow-[0_0_30px_rgba(255,255,255,0.02)] group-hover/step:shadow-[0_0_40px_rgba(255,255,255,0.05)]">
-                  <div className="absolute inset-0 rounded-2xl bg-white/[0.01] opacity-0 group-hover/step:opacity-100 transition-opacity duration-500" />
-                  <IconSettings size={28} className="text-slate-300 relative z-10" stroke={1.5} />
-                </div>
-
-                <div className="text-[10px] font-mono text-slate-500 tracking-[0.2em] mb-4 uppercase">STEP 02</div>
-                <h3 className="text-lg font-display font-medium text-white mb-3">Enable Developer Mode</h3>
-                <p className="text-sm text-slate-400 leading-relaxed font-light">
-                  Open a new tab, navigate to <code className="text-slate-300 bg-white/[0.05] px-1.5 py-0.5 rounded text-[11px] font-mono">chrome://extensions</code> and toggle Developer mode on in the top right.
-                </p>
-              </div>
-
-              {/* Step 3 */}
-              <div className="p-8 md:p-12 relative overflow-hidden group/step bg-transparent hover:bg-white/[0.01] transition-colors duration-500">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/[0.2] to-transparent opacity-0 group-hover/step:opacity-100 transition-opacity duration-500" />
-                
-                {/* Elegant Icon Container */}
-                <div className="mb-8 w-16 h-16 rounded-2xl bg-gradient-to-br from-white/[0.05] to-transparent border border-white/[0.05] flex items-center justify-center relative group-hover/step:scale-110 transition-transform duration-500 shadow-[0_0_30px_rgba(255,255,255,0.02)] group-hover/step:shadow-[0_0_40px_rgba(255,255,255,0.05)]">
-                  <div className="absolute inset-0 rounded-2xl bg-white/[0.01] opacity-0 group-hover/step:opacity-100 transition-opacity duration-500" />
-                  <IconPuzzle size={28} className="text-slate-300 relative z-10" stroke={1.5} />
-                </div>
-
-                <div className="text-[10px] font-mono text-slate-500 tracking-[0.2em] mb-4 uppercase">STEP 03</div>
-                <h3 className="text-lg font-display font-medium text-white mb-3">Load Unpacked</h3>
-                <p className="text-sm text-slate-400 leading-relaxed font-light">
-                  Click "Load unpacked", select your extracted folder, and pin the Cognify puzzle piece icon to your toolbar.
-                </p>
-              </div>
-            </div>
-            
-            {/* Unified Action Bar */}
-            <div className="w-full border-t border-white/[0.05] bg-[#0A0A0A] p-6 flex justify-center items-center relative z-10 shadow-inner">
-              <a href="/cognify-extension.zip" download="cognify-extension.zip" className="h-12 px-8 bg-white text-black font-semibold text-[13px] rounded-full flex items-center gap-2 shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-slate-200 transition-all hover:scale-105 active:scale-95 interactive">
-                <IconBrandChrome size={16} /> Download Extension
-              </a>
-            </div>
-          </div>
-        </Reveal>
       </motion.div>
     </section>
   );
@@ -501,7 +562,7 @@ export default function Home() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: 'demo@example.com', password: 'password123' });
       if (error) throw error;
-      try { await api.post('/user/reset-demo'); } catch { }
+      try { await api.post('/user/reset-demo'); } catch (err) { console.error(err); }
       toast.success('Welcome to Cognify', { id });
       navigate('/dashboard');
     } catch (e: any) { toast.error(e.message, { id }); }
@@ -565,12 +626,15 @@ export default function Home() {
         </motion.header>
 
         {/* ── HERO ───────────────────────────────────────────────────────── */}
-        <section className="relative pt-[18vh] pb-0 flex flex-col items-center justify-center min-h-[100vh] px-6 z-20">
+        <section className="relative pt-[18vh] pb-0 flex flex-col items-center justify-center min-h-[100vh] px-6 z-40">
           
           <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 z-0 opacity-100 mix-blend-screen pointer-events-none">
             <NeuralBackground />
           </motion.div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#050505_100%)] z-10 pointer-events-none" />
+          <div 
+            className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#050505_100%)] z-10 pointer-events-none"
+            style={{ WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)', maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' }}
+          />
 
           <div className="relative z-20 w-full max-w-5xl mx-auto flex flex-col items-center text-center">
             
@@ -615,7 +679,7 @@ export default function Home() {
             </motion.div>
 
             {/* Zenvix Badges */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 1.5 }} className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mt-16 mb-20 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.2em]">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 1.5 }} className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mt-16 mb-8 text-[10px] font-semibold text-slate-500 uppercase tracking-[0.2em]">
                <div className="flex items-center gap-2"><IconStar size={14} className="text-slate-400"/> 4.9/5 Rating</div>
                <div className="hidden md:block w-1 h-1 rounded-full bg-slate-800" />
                <div className="flex items-center gap-2"><IconShieldLock size={14} className="text-slate-400"/> Local-first processing</div>
@@ -625,8 +689,8 @@ export default function Home() {
           </div>
 
           {/* Dashboard Mockup Asset - Scales and rotates on scroll */}
-          <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 1.5, ease: slowEase }} className="w-full relative px-4 md:px-0 mt-8 h-[360px] sm:h-[500px] md:h-[700px] flex justify-center" style={{ perspective: '2000px' }}>
-             <div className="absolute inset-0 bg-slate-500/[0.15] blur-[120px] rounded-[3rem] pointer-events-none h-[360px] sm:h-[500px] md:h-[700px] max-w-6xl mx-auto" />
+          <motion.div initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 1.5, ease: slowEase }} className="w-full relative px-4 md:px-0 mt-8 h-[360px] sm:h-[500px] md:h-[600px] flex justify-center" style={{ perspective: '2000px' }}>
+             <div className="absolute inset-0 bg-slate-500/[0.15] blur-[120px] rounded-[3rem] pointer-events-none h-[360px] sm:h-[500px] md:h-[600px] max-w-6xl mx-auto" />
              <motion.div 
                style={{ 
                  y: useTransform(scrollY, [0, 800], [0, -50]),
@@ -636,13 +700,10 @@ export default function Home() {
                }} 
                className="absolute top-0 z-20 max-w-6xl mx-auto w-full group cursor-pointer px-4 transform-gpu"
              >
-               <div className="relative w-full transition-transform duration-700 hover:scale-[1.01] rounded-[2rem] p-px overflow-hidden shadow-[0_20px_100px_rgba(0,0,0,0.8)]">
-                 {/* Animated grey gradient border */}
-                 <div className="absolute inset-[-100%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#050505_0%,#64748b_50%,#050505_100%)] opacity-60 transition-opacity duration-500 group-hover:opacity-100" />
-                 
-                 <div className="relative z-10 rounded-[calc(2rem-1px)] overflow-hidden bg-[#030303] h-[360px] sm:h-[500px] md:h-[700px] w-full">
-                   {/* Gradient mask to blend the bottom of the image seamlessly into the page background */}
-                   <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-[#030303]/40 to-transparent z-10 pointer-events-none h-full" style={{ background: 'linear-gradient(to top, #030303 2%, transparent 30%)' }} />
+               <div className="relative w-full transition-transform duration-700 hover:scale-[1.01] rounded-[2rem] border border-white/[0.05] overflow-hidden shadow-[0_20px_100px_rgba(0,0,0,0.8)]">
+                 <div className="relative z-10 rounded-[2rem] overflow-hidden bg-[#050505] h-[360px] sm:h-[500px] md:h-[600px] w-full">
+                    {/* Gradient mask to blend the bottom of the image seamlessly into the page background */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent z-10 pointer-events-none h-full" style={{ background: 'linear-gradient(to top, #050505 2%, transparent 30%)' }} />
                    <img 
                      src="/dashboard-hero.png?v=8" 
                      alt="Cognify Premium Dashboard"
@@ -671,8 +732,8 @@ export default function Home() {
         {/* ── FOOTER ───────────────────────────────────────────────────────── */}
         <footer className="pt-24 pb-8 relative z-10 overflow-hidden">
           {/* Static Giant Background Text */}
-          <div className="absolute bottom-[-5%] left-0 right-0 w-full flex justify-center pointer-events-none select-none z-0">
-            <h1 className="text-[22vw] font-display font-black leading-none tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white/[0.03] to-transparent">
+          <div className="absolute bottom-0 left-0 right-0 w-full flex justify-center pointer-events-none select-none z-0">
+            <h1 className="text-[22vw] font-display font-black leading-none tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white/[0.03] to-transparent translate-y-[20%]">
               COGNIFY
             </h1>
           </div>

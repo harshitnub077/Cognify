@@ -49,7 +49,8 @@ const Settings = () => {
     queryKey: ['nlp-status'],
     queryFn: async () => {
       try {
-        const res = await fetch('http://localhost:8001/coach/status');
+        const nlpUrl = import.meta.env.VITE_NLP_API_URL || 'http://localhost:8001';
+        const res = await fetch(`${nlpUrl}/coach/status`);
         return res.json();
       } catch (e) {
         return null;

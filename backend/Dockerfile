@@ -22,6 +22,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+
 RUN apk add --no-cache openssl
 
 COPY --from=builder /app/node_modules ./node_modules
@@ -30,5 +32,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3001
+
+# Run as non-root user for security
+RUN chown -R node:node /app
+USER node
 
 CMD ["npm", "run", "start"]

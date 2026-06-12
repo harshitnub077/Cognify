@@ -18,3 +18,19 @@ export const analyzeRateLimiter = rateLimit({
         error: 'Too many analysis requests from this user, please try again tomorrow.'
     }
 });
+
+export const generalRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+        const authReq = req as AuthRequest;
+        if (authReq.user?.id) return authReq.user.id;
+        return ipKeyGenerator(req.ip || 'unknown');
+    },
+    message: {
+        success: false,
+        error: 'Too many requests, please try again later.'
+    }
+});

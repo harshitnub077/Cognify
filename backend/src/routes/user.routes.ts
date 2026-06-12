@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import prisma from '../lib/prisma';
 import { z } from 'zod';
+import { generalRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -73,8 +74,8 @@ router.patch('/profile', requireAuth, async (req: AuthRequest, res) => {
   try {
     const userId = req.user.id;
     const { displayName } = req.body;
-    if (!displayName || typeof displayName !== 'string' || displayName.trim().length === 0) {
-      return res.status(400).json({ error: 'Display name is required' });
+    if (!displayName || typeof displayName !== 'string' || displayName.trim().length === 0 || displayName.length > 50) {
+      return res.status(400).json({ error: 'Display name is required and must be under 50 characters' });
     }
     const profile = await prisma.userProfile.update({
       where: { userId },
@@ -88,7 +89,7 @@ router.patch('/profile', requireAuth, async (req: AuthRequest, res) => {
 });
 
 // POST /api/user/reset-demo
-router.post('/reset-demo', requireAuth, async (req: AuthRequest, res) => {
+router.post('/reset-demo', requireAuth, generalRateLimiter, async (req: AuthRequest, res) => {
   try {
     const userId = req.user.id;
     const email = req.user.email;

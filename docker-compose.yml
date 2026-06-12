@@ -9,19 +9,23 @@ services:
       context: ./cognify-nlp
       dockerfile: Dockerfile
     container_name: cognify-nlp
+    restart: unless-stopped
     ports:
       - "8001:8001"
     environment:
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
-      # Add API keys here if you want to test them inside docker, or use an env file
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
     depends_on:
-      - redis
-      - qdrant
+      redis:
+        condition: service_started
+      qdrant:
+        condition: service_started
     volumes:
       - ./cognify-nlp/models_cache:/root/.cache/huggingface
+    networks:
+      - cognify_network
 
   # ----------------------------------------------------
   # 2. Main Backend (Node.js Express)
@@ -31,37 +35,42 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: cognify-backend
+    restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
-      # Connect to the local Postgres container
-      - DATABASE_URL=postgresql://postgres:cognifylocal@postgres:5432/cognify
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:cognifylocal@postgres:5432/cognify}
       - REDIS_URL=redis://redis:6379/1
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
+    networks:
+      - cognify_network
 
   # ----------------------------------------------------
-  # 3. PostgreSQL Database (Local Dev)
+  # 3. PostgreSQL Database
   # ----------------------------------------------------
   postgres:
     image: postgres:15-alpine
     container_name: cognify-postgres
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=cognifylocal
-      - POSTGRES_DB=cognify
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-cognifylocal}
+      - POSTGRES_DB=${POSTGRES_DB:-cognify}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d cognify"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - cognify_network
 
   # ----------------------------------------------------
   # 4. Redis (Caching and Queues)
@@ -69,10 +78,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: cognify-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - cognify_network
 
   # ----------------------------------------------------
   # 5. Qdrant (Local Vector DB)
@@ -80,13 +92,20 @@ services:
   qdrant:
     image: qdrant/qdrant:latest
     container_name: cognify-qdrant
+    restart: unless-stopped
     ports:
       - "6333:6333"
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    networks:
+      - cognify_network
 
 volumes:
   postgres_data:
   redis_data:
   qdrant_data:
+
+networks:
+  cognify_network:
+    driver: bridge

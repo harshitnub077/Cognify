@@ -35,9 +35,10 @@ const Coach = () => {
           role: (msg.role === 'assistant' ? 'coach' : msg.role) as 'user' | 'coach',
           content: msg.content
         }));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages(formattedHistory);
     }
-  }, [history]);
+  }, [history, messages.length]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -58,9 +59,12 @@ const Coach = () => {
     const { data: { session } } = await supabase.auth.getSession();
     
     try {
-      const response = await fetch('http://localhost:3001/api/coach/message', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/coach/message`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({
           message: text.trim(),
           conversation_history: messages,
