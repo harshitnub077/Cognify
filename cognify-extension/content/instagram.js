@@ -83,10 +83,20 @@ function injectErrorBadge(msg) {
   const badge = document.createElement('div');
   badge.id = BADGE_ID;
   badge.className = 'cognify-badge';
+  
+  const isSessionExpired = msg && msg.toLowerCase().includes('session expired');
+
   badge.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #EF4444; box-shadow: 0 0 8px #EF444480;"></div>
-      <span style="color:#EF4444; font-weight: 600; font-size: 14px;">⚠️ ${msg}</span>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #EF4444; box-shadow: 0 0 8px #EF444480;"></div>
+        <span style="color:#EF4444; font-weight: 600; font-size: 14px;">⚠️ ${msg}</span>
+      </div>
+      ${isSessionExpired ? `
+      <a href="https://cognify-beige.vercel.app/dashboard" target="_blank" style="text-decoration: none; padding: 6px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; color: white; text-align: center; font-size: 13px; font-weight: 500; margin-top: 4px; border: 1px solid rgba(255,255,255,0.2);">
+        Open Dashboard to Login
+      </a>
+      ` : ''}
     </div>
   `;
   insertBadge(badge);

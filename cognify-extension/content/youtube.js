@@ -59,6 +59,8 @@ function renderBadgeFromState() {
       </div>
     `;
   } else if (currentBadgeState.type === 'error') {
+    const isSessionExpired = currentBadgeState.msg && currentBadgeState.msg.toLowerCase().includes('session expired');
+    
     badge.innerHTML = `
       <div class="cognify-badge-inner">
         <div class="cognify-badge-header">
@@ -77,6 +79,13 @@ function renderBadgeFromState() {
         <div class="cognify-badge-summary error-msg">
           ${currentBadgeState.msg}
         </div>
+        ${isSessionExpired ? `
+        <div style="padding: 0 16px 12px; margin-top: -4px;">
+          <a href="https://cognify-beige.vercel.app/dashboard" target="_blank" class="cognify-btn primary-btn" style="display: flex; justify-content: center; text-decoration: none;">
+            Open Dashboard to Login
+          </a>
+        </div>
+        ` : ''}
       </div>
     `;
   } else if (currentBadgeState.type === 'result') {
