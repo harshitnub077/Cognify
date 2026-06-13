@@ -502,9 +502,20 @@ const Dashboard = () => {
                   </div>
                 </div>
                 
-                <div className="mt-6 p-4 bg-primary/10 rounded-xl flex items-center gap-3 border border-primary/20">
-                  <IconLoader2 className="animate-spin text-primary" size={20} />
-                  <p className="text-sm text-primary font-medium">Waiting for extension to connect...</p>
+                <div className="mt-6 p-4 bg-primary/10 rounded-xl border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <IconLoader2 className="animate-spin text-primary shrink-0" size={20} />
+                    <div>
+                      <p className="text-sm text-primary font-medium">Waiting for extension...</p>
+                      <p className="text-xs text-primary/70 mt-0.5">Please refresh this page after installing.</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="w-full sm:w-auto px-4 py-2 bg-primary text-black text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap"
+                  >
+                    Refresh Page
+                  </button>
                 </div>
               </div>
             </motion.div>

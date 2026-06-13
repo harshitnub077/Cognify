@@ -43,17 +43,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('avg-match').textContent = `${Math.round(lastAnalysis.score || 0)}%`;
   }
 
-  // Handle Recommendations Button
-  const recommendBtn = document.getElementById('recommend-btn');
-  const searchInput = document.getElementById('topic-search');
-  if (recommendBtn && searchInput) {
-    recommendBtn.addEventListener('click', () => {
-      const query = searchInput.value.trim();
-      if (query) {
-        chrome.tabs.create({ url: `https://cognify-beige.vercel.app/dashboard?goal=${encodeURIComponent(query)}` });
-      } else {
-        chrome.tabs.create({ url: `https://cognify-beige.vercel.app/dashboard` });
-      }
-    });
-  }
 });
