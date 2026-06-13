@@ -183,9 +183,24 @@ const History = () => {
                       {/* Integrated Professional Thumbnail */}
                       <div className="relative w-full aspect-[21/9] bg-[#111] overflow-hidden border-b border-[#1a1a1a]">
                         <img
-                          src={item.thumbnail || (item.url?.includes('youtube.com/watch') ? `https://img.youtube.com/vi/${new URL(item.url).searchParams.get('v')}/maxresdefault.jpg` : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400')}
+                          src={(() => {
+                            const isYoutube = item.platform === 'youtube' || item.contentType === 'youtube' || (item.url && item.url.includes('youtu'));
+                            if (isYoutube && item.url) {
+                              const match = item.url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([^&?\s]+)/);
+                              if (match && match[1]) {
+                                return `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
+                              }
+                            }
+                            return item.thumbnail || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=400';
+                          })()}
                           alt="thumb"
                           className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500"
+                          onError={(e) => {
+                            const img = e.currentTarget;
+                            if (img.src.includes('maxresdefault.jpg')) {
+                              img.src = img.src.replace('maxresdefault.jpg', 'hqdefault.jpg');
+                            }
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80" />
                         

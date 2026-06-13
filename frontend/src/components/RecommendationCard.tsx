@@ -34,15 +34,40 @@ export const RecommendationCard = ({ item, isBookmarked: initialBookmarked = fal
     <motion.div
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      onClick={() => { if (item.url) window.open(item.url, '_blank'); }}
+      onClick={() => { 
+        let targetUrl = item.url || item.link;
+        if (targetUrl) {
+          if (!targetUrl.startsWith('http')) {
+            targetUrl = `https://${targetUrl}`;
+          }
+          window.open(targetUrl, '_blank'); 
+        }
+      }}
       className="group flex flex-col w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg overflow-hidden cursor-pointer hover:border-[#333] transition-colors"
     >
       <div className="relative aspect-video w-full bg-[#111] overflow-hidden border-b border-[#1a1a1a]">
         <img
-          src={item.thumbnail}
+          src={(() => {
+            const videoUrl = item.url || item.link;
+            const isYoutube = item.platform === 'youtube' || (videoUrl && videoUrl.includes('youtu'));
+            if (isYoutube && videoUrl) {
+              const match = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([^&?\s]+)/);
+              if (match && match[1]) {
+                return `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
+              }
+            }
+            return item.thumbnail;
+          })()}
           alt={item.title}
           className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300"
           loading="lazy"
+          onError={(e) => {
+            // Fallback to hqdefault if maxresdefault doesn't exist
+            const img = e.currentTarget;
+            if (img.src.includes('maxresdefault.jpg')) {
+              img.src = img.src.replace('maxresdefault.jpg', 'hqdefault.jpg');
+            }
+          }}
         />
         
         {/* Top Badges */}
