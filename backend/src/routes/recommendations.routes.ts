@@ -90,10 +90,13 @@ router.get('/', requireAuth, async (req: any, res) => {
   } catch (error) {
     console.error('Failed to fetch recommendations', error);
     
+    const fallbackGoal = req.query.goal || 'Focused Thinker';
+    const fallbackLimit = parseInt(req.query.limit) || 8;
+
     // Ultimate Fail-safe: Always return dummy videos if everything fails so the UI never breaks
-    const dummyRecommendations = Array(limit).fill(0).map((_, i) => ({
+    const dummyRecommendations = Array(fallbackLimit).fill(0).map((_, i) => ({
       id: `fallback-${i}`,
-      title: `${goal} Masterclass: Core Concepts Explained`,
+      title: `${fallbackGoal} Masterclass: Core Concepts Explained`,
       channel: `Cognify Curated`,
       url: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
       thumbnail: `https://images.unsplash.com/photo-1${150000 + i}?w=400&q=80`,
@@ -103,7 +106,7 @@ router.get('/', requireAuth, async (req: any, res) => {
       score: 95,
       dominantEmotion: 'inspired',
       emotions: { joy: 0.8, surprise: 0.1, neutral: 0.1 },
-      reason: `Highly recommended foundational content for your goal: ${goal}`
+      reason: `Highly recommended foundational content for your goal: ${fallbackGoal}`
     }));
     
     res.json({ data: dummyRecommendations });
