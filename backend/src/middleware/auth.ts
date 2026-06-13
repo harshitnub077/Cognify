@@ -7,6 +7,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABAS
 let _supabase: SupabaseClient | null = null;
 
 import ws from 'ws';
+(globalThis as any).WebSocket = ws;
 
 const getSupabase = (): SupabaseClient => {
   if (!_supabase) {
@@ -16,9 +17,6 @@ const getSupabase = (): SupabaseClient => {
     _supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
-      },
-      global: {
-        WebSocket: ws as any
       }
     });
   }
