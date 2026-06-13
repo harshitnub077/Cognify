@@ -69,8 +69,17 @@ router.get('/', requireAuth, async (req: any, res) => {
       let thumbnail = item.thumbnail || `https://picsum.photos/seed/cognify${idx}${Math.floor(Math.random()*9999)}/400/225`;
       
       try {
-        const v = new URL(item.url).searchParams.get('v');
-        if (v) thumbnail = `https://img.youtube.com/vi/${v}/maxresdefault.jpg`;
+        let v = null;
+        if (item.url.includes('youtube.com/watch')) {
+          v = new URL(item.url).searchParams.get('v');
+        } else if (item.url.includes('youtu.be/')) {
+          v = new URL(item.url).pathname.substring(1);
+        }
+        
+        if (v) {
+          // Use hqdefault.jpg instead of maxresdefault.jpg because maxresdefault often 404s for older videos
+          thumbnail = `https://img.youtube.com/vi/${v}/hqdefault.jpg`;
+        }
       } catch(e) {}
       
       return {
@@ -106,7 +115,7 @@ router.get('/', requireAuth, async (req: any, res) => {
       title: `${fallbackGoal} Masterclass: Core Concepts Explained`,
       channel: `Cognify Curated`,
       url: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
-      thumbnail: `https://picsum.photos/seed/fallback${i}/400/225`,
+      thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg`,
       platform: 'youtube',
       duration: '15:24',
       viewCount: '250K views',
