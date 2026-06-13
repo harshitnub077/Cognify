@@ -20,6 +20,9 @@ router.get('/', requireAuth, async (req: any, res) => {
         exclude_urls
       }, { timeout: 3000 });
       nlpResponseData = nlpResponse.data.data;
+      if (!nlpResponseData || nlpResponseData.length === 0) {
+        throw new Error("NLP service returned empty recommendations, triggering fallback");
+      }
     } catch (nlpError) {
       console.log('NLP service unavailable, falling back to Gemini for recommendations');
       
@@ -85,6 +88,10 @@ router.get('/', requireAuth, async (req: any, res) => {
         reason: item.reason
       };
     });
+
+    if (!recommendations || recommendations.length === 0) {
+      throw new Error("Both NLP and Gemini returned empty recommendations, triggering ultimate fallback");
+    }
 
     res.json({ data: recommendations });
   } catch (error) {
