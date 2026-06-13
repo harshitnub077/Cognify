@@ -276,8 +276,15 @@ router.put('/time', requireAuth, async (req: AuthRequest, res) => {
         }
 
         // Find the most recent log for this URL to update
+        // Use video ID matching for YouTube to handle URL params like &t=
+        let matchCondition: any = { equals: url };
+        const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([^&?\s]+)/);
+        if (ytMatch && ytMatch[1]) {
+            matchCondition = { contains: ytMatch[1] };
+        }
+
         const recentLog = await prisma.contentLog.findFirst({
-            where: { userId, url },
+            where: { userId, url: matchCondition },
             orderBy: { createdAt: 'desc' }
         });
 
