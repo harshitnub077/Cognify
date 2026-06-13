@@ -63,8 +63,19 @@ router.get('/', requireAuth, async (req: any, res) => {
       const suffix = suffixes[seed % suffixes.length];
       const actualQueries = baseQueries.map((q: string) => `${q} ${suffix}`.trim());
       
-      // Run all 3 YouTube searches IN PARALLEL for lightning speed (takes 1.5s total instead of 4.5s)
-      const searchResultsArray = await Promise.all(actualQueries.map((q: string) => yts(q)));
+      if (!(global as any).ytsCache) (global as any).ytsCache = new Map();
+      const ytsCache = (global as any).ytsCache;
+
+      // Run all 3 YouTube searches IN PARALLEL for lightning speed, leveraging cache
+      const searchResultsArray = await Promise.all(actualQueries.map(async (q: string) => {
+        if (ytsCache.has(q)) {
+          const cached = ytsCache.get(q);
+          if (Date.now() - cached.timestamp < 60 * 60 * 1000) return cached.data; // 1 hour TTL
+        }
+        const res = await yts(q);
+        ytsCache.set(q, { data: res, timestamp: Date.now() });
+        return res;
+      }));
       
       let allVideos: any[] = [];
       searchResultsArray.forEach(results => {

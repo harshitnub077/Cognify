@@ -93,15 +93,16 @@ router.get('/drift-score', requireAuth, async (req: AuthRequest, res) => {
         const fourteenDaysAgo = new Date(now);
         fourteenDaysAgo.setDate(now.getDate() - 14);
 
-        const currentWeekLogs = await prisma.contentLog.findMany({
-            where: { userId, createdAt: { gte: sevenDaysAgo } },
-            select: { score: true }
-        });
-
-        const prevWeekLogs = await prisma.contentLog.findMany({
-            where: { userId, createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo } },
-            select: { score: true }
-        });
+        const [currentWeekLogs, prevWeekLogs] = await Promise.all([
+            prisma.contentLog.findMany({
+                where: { userId, createdAt: { gte: sevenDaysAgo } },
+                select: { score: true }
+            }),
+            prisma.contentLog.findMany({
+                where: { userId, createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo } },
+                select: { score: true }
+            })
+        ]);
 
         const currentAvg = currentWeekLogs.length > 0 
             ? currentWeekLogs.reduce((acc, l) => acc + l.score, 0) / currentWeekLogs.length 
@@ -249,19 +250,20 @@ router.get('/weekly-report', requireAuth, async (req: AuthRequest, res: any) => 
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const logs = await prisma.contentLog.findMany({
-            where: { userId, createdAt: { gte: sevenDaysAgo } },
-            orderBy: { createdAt: 'desc' }
-        });
-
-        const profile = await prisma.userProfile.findUnique({ where: { userId } });
+        const [logs, profile, driftScores] = await Promise.all([
+            prisma.contentLog.findMany({
+                where: { userId, createdAt: { gte: sevenDaysAgo } },
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.userProfile.findUnique({ where: { userId } }),
+            prisma.driftScore.findMany({
+                where: { userId },
+                orderBy: { date: 'desc' },
+                take: 2
+            })
+        ]);
+        
         const goals = (profile as any)?.identities?.join(', ') || (profile as any)?.focusAreas?.join(', ') || 'None specified';
-
-        const driftScores = await prisma.driftScore.findMany({
-            where: { userId },
-            orderBy: { date: 'desc' },
-            take: 2
-        });
         
         const currentDrift = driftScores[0]?.score || 0;
         const prevDrift = driftScores[1]?.score || 0;
