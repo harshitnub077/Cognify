@@ -6,12 +6,21 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABAS
 
 let _supabase: SupabaseClient | null = null;
 
+import ws from 'ws';
+
 const getSupabase = (): SupabaseClient => {
   if (!_supabase) {
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) must be set in .env');
     }
-    _supabase = createClient(supabaseUrl, supabaseKey);
+    _supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+      },
+      global: {
+        WebSocket: ws as any
+      }
+    });
   }
   return _supabase;
 };
