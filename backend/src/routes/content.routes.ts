@@ -108,7 +108,51 @@ router.post('/analyze', requireAuth, analyzeRateLimiter, async (req: AuthRequest
         nlpResponse = response.data;
     } catch (nlpError: any) {
         console.error('NLP Service Error:', nlpError.message);
-        return res.status(502).json({ success: false, error: 'Failed to communicate with AI analysis service' });
+        console.log('Falling back to Gemini for content analysis based on active goal');
+        
+        try {
+            const { GoogleGenerativeAI } = require('@google/generative-ai');
+            const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+            
+            if (!genAI) throw new Error("No Gemini API key available");
+            
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const prompt = `You are a strict, hyper-intelligent content curation AI for productivity. 
+            Analyze this YouTube video to determine if it strictly aligns with the user's active goals.
+            
+            User Active Goals: ${JSON.stringify(userGoals)}
+            Video Title: ${title}
+            Video Description: ${req.body.description || ''}
+            Partial Transcript: ${req.body.transcript ? req.body.transcript.substring(0, 1500) : ''}
+            
+            If it perfectly aligns and is highly productive for these goals, verdict is "watch". 
+            If it's somewhat related but maybe a distraction, verdict is "caution". 
+            If it's unrelated brain-rot or distraction, verdict is "skip".
+            
+            Return ONLY a valid JSON object matching this schema (do not include markdown \`\`\`json wrappers):
+            {
+              "insight": {
+                "verdict": "watch" | "caution" | "skip",
+                "text": "1-2 punchy sentences explaining exactly why this is good or bad for their specific goal."
+              },
+              "goal_alignment": {
+                "score": number, // 0-100. 85+ if highly relevant, <40 if distraction
+                "reason": "Short reason"
+              },
+              "dominant_emotion": "inspired" | "neutral" | "joy" | "boredom" | "anxiety",
+              "platform": "youtube"
+            }`;
+            
+            const result = await model.generateContent(prompt);
+            let text = result.response.text().trim();
+            if (text.startsWith('\`\`\`json')) text = text.substring(7, text.length - 3).trim();
+            else if (text.startsWith('\`\`\`')) text = text.substring(3, text.length - 3).trim();
+            
+            nlpResponse = JSON.parse(text);
+        } catch (geminiError) {
+            console.error('Gemini fallback failed:', geminiError);
+            return res.status(502).json({ success: false, error: 'Failed to communicate with AI analysis service' });
+        }
     }
 
     // Map verdict → isConscious: "watch" = conscious, "caution"/"skip" = not
