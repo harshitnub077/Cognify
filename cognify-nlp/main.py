@@ -30,17 +30,23 @@ async def lifespan(app: FastAPI):
     import os
     from langchain_google_genai import GoogleGenerativeAIEmbeddings
     embedder = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
+        model="models/gemini-embedding-001",
         google_api_key=os.getenv("GEMINI_API_KEY", "")
     )
     print("✅ Embedder loaded (sentence-transformers/all-MiniLM-L6-v2)")
 
-    # 2. Connect to local Qdrant
+    # 2. Connect to local or cloud Qdrant
     from qdrant_client import QdrantClient
-    qdrant_path = os.path.join(os.path.dirname(__file__), "qdrant_db")
-    os.makedirs(qdrant_path, exist_ok=True)
-    qdrant_client = QdrantClient(path=qdrant_path)
-    print(f"✅ Qdrant connected at {qdrant_path}")
+    qdrant_url = os.getenv("QDRANT_URL")
+    qdrant_api_key = os.getenv("QDRANT_API_KEY")
+    if qdrant_url:
+        qdrant_client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
+        print(f"✅ Qdrant connected to Cloud at {qdrant_url}")
+    else:
+        qdrant_path = os.path.join(os.path.dirname(__file__), "qdrant_db")
+        os.makedirs(qdrant_path, exist_ok=True)
+        qdrant_client = QdrantClient(path=qdrant_path)
+        print(f"✅ Qdrant connected locally at {qdrant_path}")
 
     # 3. Initialize semantic cache (Qdrant collection)
     from services.semantic_cache import init_semantic_cache

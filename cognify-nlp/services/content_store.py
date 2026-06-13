@@ -34,7 +34,7 @@ from qdrant_client.models import (
 from langchain_core.embeddings import Embeddings
 
 CONTENT_COLLECTION = "cognify_content_v3"
-VECTOR_SIZE = 768
+VECTOR_SIZE = 3072
 
 _embedder: Optional[Embeddings] = None
 _client: Optional[QdrantClient] = None

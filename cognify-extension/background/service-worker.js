@@ -1,6 +1,8 @@
 // service-worker.js — Cognify Background Service Worker
 // Passes analysis requests to the backend with the user's auth token
 
+const API_URL = 'https://cognify-api-lin2.onrender.com/api'; // Change to http://localhost:3001/api for local dev
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'EXTRACT_PLAYER_DATA') {
     chrome.scripting.executeScript({
@@ -85,7 +87,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return;
         }
 
-        const response = await fetch('https://cognify-api-lin2.onrender.com/api/content/analyze', {
+        const response = await fetch(`${API_URL}/content/analyze`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -151,7 +153,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           exclude: message.exclude ? message.exclude.join(',') : ''
         }).toString();
 
-        const response = await fetch(`https://cognify-api-lin2.onrender.com/api/recommendations?${queryParams}`, {
+        const response = await fetch(`${API_URL}/recommendations?${queryParams}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${cognify_token}`
@@ -185,7 +187,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const { cognify_token } = await chrome.storage.local.get('cognify_token');
         if (!cognify_token) return;
 
-        await fetch('https://cognify-api-lin2.onrender.com/api/content/time', {
+        await fetch(`${API_URL}/content/time`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

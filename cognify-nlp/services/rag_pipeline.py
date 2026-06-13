@@ -22,13 +22,14 @@ def get_retriever():
         return _retriever
 
     embedder = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
+        model="models/gemini-embedding-001",
         google_api_key=os.getenv("GEMINI_API_KEY", "")
     )
 
     qdrant_url = os.getenv("QDRANT_URL")
+    qdrant_api_key = os.getenv("QDRANT_API_KEY")
     if qdrant_url:
-        client = QdrantClient(url=qdrant_url)
+        client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
     else:
         qdrant_path = os.path.join(os.path.dirname(__file__), "..", "qdrant_db")
         os.makedirs(qdrant_path, exist_ok=True)
@@ -41,7 +42,7 @@ def get_retriever():
     except Exception:
         client.create_collection(
             collection_name=COLLECTION_NAME,
-            vectors_config={"size": 768, "distance": "Cosine"}
+            vectors_config={"size": 3072, "distance": "Cosine"}
         )
 
     vectorstore = QdrantVectorStore(
