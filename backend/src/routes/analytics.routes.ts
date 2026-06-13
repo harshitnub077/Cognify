@@ -179,7 +179,7 @@ router.post('/blind-spot', requireAuth, async (req: any, res: any) => {
     }
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
       generationConfig: { responseMimeType: "application/json" }
     });
     const prompt = BLINDSPOT_PROMPT.replace('{topics}', topics.map(t => `- ${t}`).join('\\n'));
@@ -277,7 +277,7 @@ router.get('/weekly-report', requireAuth, async (req: AuthRequest, res: any) => 
             .replace('{prev_drift}', prevDrift.toString());
 
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
             generationConfig: { responseMimeType: "application/json" }
         });
         const result = await model.generateContent(prompt);
