@@ -8,10 +8,12 @@
     "*://*.youtube.com/*",
     "*://*.instagram.com/*",
     "http://localhost:8001/*",
-    "https://cognify-api-lin2.onrender.com/*",
+    "http://localhost:3001/*",
     "http://localhost:5173/*",
     "http://localhost:5174/*",
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "https://cognify-beige.vercel.app/*",
+    "https://cognify-api-lin2.onrender.com/*"
   ],
   "icons": {
     "16": "icons/icon-16.png",
@@ -35,7 +37,7 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["http://localhost:5173/*", "http://localhost:5174/*", "http://localhost:3000/*"],
+      "matches": ["http://localhost:5173/*", "http://localhost:5174/*", "http://localhost:3000/*", "https://cognify-beige.vercel.app/*"],
       "js": ["content/sync-auth.js"],
       "run_at": "document_idle"
     }

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Handle Login Button
   if (loginBtn) {
     loginBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://cognify-app.vercel.app/dashboard' });
+      chrome.tabs.create({ url: 'https://cognify-beige.vercel.app/dashboard' });
     });
   }
 
@@ -50,9 +50,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     recommendBtn.addEventListener('click', () => {
       const query = searchInput.value.trim();
       if (query) {
-        chrome.tabs.create({ url: `https://cognify-app.vercel.app/dashboard?goal=${encodeURIComponent(query)}` });
+        chrome.tabs.create({ url: `https://cognify-beige.vercel.app/dashboard?goal=${encodeURIComponent(query)}` });
       } else {
-        chrome.tabs.create({ url: `https://cognify-app.vercel.app/dashboard` });
+        chrome.tabs.create({ url: `https://cognify-beige.vercel.app/dashboard` });
       }
     });
   }

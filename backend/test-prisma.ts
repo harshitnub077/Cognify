@@ -1,15 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
-async function main() {
-    try {
-        const yearAgo = new Date();
-        yearAgo.setDate(yearAgo.getDate() - 365);
-        const logs = await prisma.contentLog.findMany({
-            where: { createdAt: { gte: yearAgo.toISOString() } }
-        });
-        console.log("Success:", logs.length);
-    } catch(e: any) {
-        console.error("Error:", e.message);
-    }
+import prisma from './src/lib/prisma';
+async function test() {
+  console.log("Checking prisma...");
+  const count = await prisma.user.count();
+  console.log("Count:", count);
 }
-main();
+test().catch(console.error).finally(() => process.exit(0));
