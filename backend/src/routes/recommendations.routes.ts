@@ -65,8 +65,8 @@ router.get('/', requireAuth, async (req: any, res) => {
     const platforms = ['youtube'];
     const emotions = ['joy', 'surprise', 'neutral', 'inspired'];
     
-    const recommendations = nlpResponseData.map((item: any) => {
-      let thumbnail = item.thumbnail || `https://images.unsplash.com/photo-1${Math.floor(Math.random()*99999)}?w=400&q=80`;
+    const recommendations = nlpResponseData.map((item: any, idx: number) => {
+      let thumbnail = item.thumbnail || `https://picsum.photos/seed/cognify${idx}${Math.floor(Math.random()*9999)}/400/225`;
       
       try {
         const v = new URL(item.url).searchParams.get('v');
@@ -106,7 +106,7 @@ router.get('/', requireAuth, async (req: any, res) => {
       title: `${fallbackGoal} Masterclass: Core Concepts Explained`,
       channel: `Cognify Curated`,
       url: `https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
-      thumbnail: `https://images.unsplash.com/photo-1${150000 + i}?w=400&q=80`,
+      thumbnail: `https://picsum.photos/seed/fallback${i}/400/225`,
       platform: 'youtube',
       duration: '15:24',
       viewCount: '250K views',
