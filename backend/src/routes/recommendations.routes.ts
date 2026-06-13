@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { prisma } from '../lib/prisma';
+import prisma from '../lib/prisma';
 const yts = require('yt-search');
 
 const router = Router();
@@ -17,8 +17,8 @@ router.get('/', requireAuth, async (req: any, res) => {
     let goal = req.query.goal;
     if (!goal || goal === 'Focused Thinker' || goal.trim() === '') {
       const profile = await prisma.userProfile.findUnique({ where: { userId: req.user.id } });
-      if (profile && profile.identities && Array.isArray(profile.identities) && profile.identities.length > 0) {
-        goal = profile.identities.join(' ');
+      if (profile && profile.focusAreas && Array.isArray(profile.focusAreas) && profile.focusAreas.length > 0) {
+        goal = profile.focusAreas.join(' ');
       } else {
         goal = 'Focused Thinker';
       }
@@ -110,7 +110,7 @@ router.get('/', requireAuth, async (req: any, res) => {
   } catch (error) {
     console.error('Failed to fetch recommendations', error);
     
-    const fallbackGoal = goal;
+    const fallbackGoal = typeof req.query.goal === 'string' && req.query.goal.trim() !== '' ? req.query.goal : 'Focused Thinker';
     const fallbackLimit = parseInt(req.query.limit) || 8;
 
     const realDummyVideos = [
