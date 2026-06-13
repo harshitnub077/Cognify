@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
+import { prisma } from '../lib/prisma';
 const yts = require('yt-search');
 
 const router = Router();
@@ -13,7 +14,15 @@ const cache = (global as any).goalVideosCache;
 // Get recommendations
 router.get('/', requireAuth, async (req: any, res) => {
   try {
-    const goal = req.query.goal || 'Focused Thinker';
+    let goal = req.query.goal;
+    if (!goal || goal === 'Focused Thinker' || goal.trim() === '') {
+      const profile = await prisma.userProfile.findUnique({ where: { userId: req.user.id } });
+      if (profile && profile.identities && Array.isArray(profile.identities) && profile.identities.length > 0) {
+        goal = profile.identities.join(' ');
+      } else {
+        goal = 'Focused Thinker';
+      }
+    }
     const limit = parseInt(req.query.limit) || 8;
     const exclude_urls = req.query.exclude ? req.query.exclude.split(',') : [];
     
@@ -101,7 +110,7 @@ router.get('/', requireAuth, async (req: any, res) => {
   } catch (error) {
     console.error('Failed to fetch recommendations', error);
     
-    const fallbackGoal = req.query.goal || 'Focused Thinker';
+    const fallbackGoal = goal;
     const fallbackLimit = parseInt(req.query.limit) || 8;
 
     const realDummyVideos = [
