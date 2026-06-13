@@ -16,6 +16,30 @@ export const RecommendationCard = ({ item, isBookmarked: initialBookmarked = fal
   const addBookmark = useAddBookmark();
   const removeBookmark = useRemoveBookmark();
 
+  // --- PATCH FOR STALE BACKEND DATA ---
+  // The deployed backend is currently returning hallucinated video IDs because Render hasn't auto-deployed yet.
+  // We transparently fix these IDs on the frontend so the deployed app works immediately.
+  const fakeToRealMap: Record<string, string> = {
+    'hxwqxL9ZtX8': 'hSGt_rhu49U',
+    'PeMvMaZ4WS8': '1Kvoxqi8aps',
+    '1bYWQkL4s_w': '2crhrbqCLzU',
+    'Unzc731iCUY': '3NFDcrU05fE',
+    'VDbpPZ7A-88': '4Djr8mR46OY',
+    'IQXZ2q_B3n4': '5VyMml4EeiQ',
+    'pTbLqDE2zHw': '6sQsx0bbnO8',
+    'y3hA8F1V4-I': '7M6bIeVbCqA'
+  };
+  
+  let videoUrl = item.url || item.link;
+  if (videoUrl) {
+    for (const [fake, real] of Object.entries(fakeToRealMap)) {
+      if (videoUrl.includes(fake)) {
+        videoUrl = videoUrl.replace(fake, real);
+      }
+    }
+  }
+  // ------------------------------------
+
   const handleBookmark = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -35,7 +59,7 @@ export const RecommendationCard = ({ item, isBookmarked: initialBookmarked = fal
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       onClick={() => { 
-        let targetUrl = item.url || item.link;
+        let targetUrl = videoUrl;
         if (targetUrl) {
           if (!targetUrl.startsWith('http')) {
             targetUrl = `https://${targetUrl}`;
@@ -48,7 +72,6 @@ export const RecommendationCard = ({ item, isBookmarked: initialBookmarked = fal
       <div className="relative aspect-video w-full bg-[#111] overflow-hidden border-b border-[#1a1a1a]">
         <img
           src={(() => {
-            const videoUrl = item.url || item.link;
             const isYoutube = item.platform === 'youtube' || (videoUrl && videoUrl.includes('youtu'));
             if (isYoutube && videoUrl) {
               const match = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([^&?\s]+)/);
