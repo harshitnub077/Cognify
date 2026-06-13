@@ -1,88 +1,68 @@
-# Cognify 🧠: Agentic Content Intelligence
+<div align="center">
+  <img src="https://raw.githubusercontent.com/harshitnub077/Cognify/main/frontend/public/logo.png" alt="Cognify Logo" width="120" />
+  <h1>Cognify 🧠</h1>
+  <p><strong>Agentic Content Intelligence & Digital Alignment Platform</strong></p>
+  <p>
+    <img src="https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge&logo=vercel" alt="Status" />
+    <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+    <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  </p>
+</div>
 
-Cognify is an AI-powered, conscious content intelligence platform engineered to cure mindless scrolling. It operates as an **autonomous Agentic RAG system**, actively analyzing your digital diet (YouTube, Twitter) and providing real-time, personalized reality checks to align your content consumption with your stated life goals.
+<br/>
 
-The system enforces a premium, minimalist "Apple/Linear" monochrome aesthetic across the dashboard to reduce cognitive overload and prevent gamification distractions.
+Cognify is an AI-powered, conscious content intelligence platform engineered to cure mindless scrolling. It operates as an **autonomous Agentic RAG system**, actively analyzing your digital diet (YouTube, Web) and providing real-time, personalized reality checks to align your content consumption with your stated life goals.
+
+The system enforces a premium, minimalist monochrome aesthetic across the dashboard to reduce cognitive overload, eliminate gamification distractions, and enforce pure focus.
 
 ---
 
-## 🏗 System Architecture
+## ✨ Key Features
 
-Cognify utilizes a sophisticated microservice architecture spanning a Chrome extension, a high-concurrency Node.js backend, and an asynchronous Python FastAPI NLP engine.
+- **🛡️ Real-Time Distraction Blocking:** Seamless Chrome Extension that analyzes YouTube sidebars and DOM elements, intelligently replacing clickbait with hyper-relevant, goal-oriented content.
+- **🧠 Autonomous Agentic RAG:** Leverages LLMs to grade your content consumption against your life goals (e.g., "UPSC Preparation"), generating a brutal, honest "Consciousness Score".
+- **⚡ Lightning-Fast Content Engine:** Uses an optimized single-core caching architecture to instantly fetch, rank, and serve YouTube tutorials, masterclasses, and courses directly to your dashboard.
+- **📈 Deep Analytics Dashboard:** Visualizes your "Digital Drift," focus streaks, reclaimed time, and emotional alignment across beautiful, Recharts-powered graphs.
+
+---
+
+## 🏗 System Architecture & Workflows
+
+Cognify utilizes a sophisticated microservice architecture spanning a Chrome extension, a high-concurrency Node.js Express backend, and PostgreSQL for robust, relational persistence.
+
+### Data Flow Diagram
 
 ```mermaid
 graph TD
-    User([User]) --> |Browses Web| Ext[Chrome Extension]
-    Ext --> |Extracts DOM & Transcript| NLP[FastAPI NLP Engine]
+    User([User]) --> |Browses YouTube| Ext[Cognify Chrome Extension]
     
-    subgraph Agentic RAG System
-        NLP --> |Local CPU Embedding| Embed[HuggingFace Embedder]
-        Embed --> |Similarity Search| Qdrant[(Qdrant Vector DB)]
-        Qdrant -.-> |Matched Context| NLP
-        NLP --> |Context + Prompt| Router{Smart LLM Router}
-        Router --> |Primary| Groq[Groq API Llama-3]
-        Router -.-> |Fallback| Gemini[Gemini 2.0 API]
+    subgraph Browser Context
+        Ext --> |Extracts DOM & Video Meta| ExtBg[Service Worker]
+        ExtBg --> |Injects Relevant UI| DOM[YouTube UI]
     end
     
-    Groq --> NLP
-    Gemini --> NLP
+    subgraph Cognify Cloud
+        ExtBg --> |Syncs Data| API[Node.js / Express API]
+        API --> |Validates Payload| Auth[JWT Middleware]
+        Auth --> |Caches Goals| YTScraper[Goal-Oriented YT Caching Engine]
+        Auth --> |Stores Logs| DB[(PostgreSQL)]
+    end
     
-    NLP --> |Alignment Verdict| Ext
-    
-    Ext --> |Persists Logs| Backend[Node.js / Express Backend]
-    Backend --> DB[(PostgreSQL)]
-    Backend --> Redis[(Redis Quotas/Cache)]
-    
-    User --> |Views Analytics| Frontend[React + Vite Dashboard]
-    Frontend <--> Backend
+    User --> |Views Progress| Dashboard[React + Vite Frontend]
+    Dashboard <--> API
 ```
 
 ---
 
-## 🤖 Agentic RAG Workflow
+## 🗄️ Entity-Relationship Model (ERD)
 
-The core of Cognify is the **Drift Coach**. Rather than blindly sending data to OpenAI, Cognify uses a locally-hosted semantic embedding model to cache requests, and a Smart LLM router to distribute prompt inference for zero-cost operation.
-
-```mermaid
-sequenceDiagram
-    participant Chrome as Chrome Extension
-    participant API as FastAPI (NLP Engine)
-    participant Qdrant as Qdrant DB
-    participant LLM as Smart LLM Router
-
-    Chrome->>API: POST /analyze (Title, Description, Transcript)
-    API->>API: Generate Local Embedding (all-MiniLM-L6-v2)
-    API->>Qdrant: Search Semantic Cache (Similarity > 0.95)
-    
-    alt Cache Hit
-        Qdrant-->>API: Return Cached Alignment & Verdict
-    else Cache Miss
-        API->>LLM: Supply Content + User Directive
-        LLM-->>API: Generate Score, Emotion, Summary & Reality Check
-        API->>Qdrant: Store New Embedding & Metadata
-    end
-    
-    API-->>Chrome: Return Content Intelligence
-```
-
-### Advanced AI Capabilities:
-1. **Contextual Awareness**: The agent retrieves the user’s last 20 consumed items to establish a baseline of "Digital Drift."
-2. **Harsh but Fair Coach**: Generates a "Drift Score" (0-100) alongside brutal, 1-sentence reality checks.
-3. **Zero-Cost LLM Routing**: 
-   - Primary: **Groq API** (Llama 3, lightning fast, free tier).
-   - Fallback: **Gemini 2.0 Flash** API.
-4. **Local Vector Embeddings**: Uses `sentence-transformers/all-MiniLM-L6-v2` inside the FastAPI runtime via `asyncio.to_thread` to prevent event loop blocking.
-
----
-
-## 🗄️ Entity-Relationship Diagram
-
-The persistent data storage is handled by PostgreSQL via Prisma ORM.
+The persistent data storage is handled by PostgreSQL via Prisma ORM, utilizing Foreign Keys, Cascading deletes, and highly optimized indexing for millisecond response times.
 
 ```mermaid
 erDiagram
-    USER ||--o| USER_PROFILE : has
-    USER ||--o{ CONTENT_LOG : tracks
+    USER ||--o| USER_PROFILE : owns
+    USER ||--o{ CONTENT_LOG : generates
     USER ||--o{ DRIFT_SCORE : accumulates
     USER ||--o{ STREAK : maintains
     USER ||--o{ COACH_SESSION : engages
@@ -94,28 +74,33 @@ erDiagram
     CIRCLE ||--o{ CIRCLE_MEMBER : includes
 
     USER {
-        uuid id PK
-        string email
+        string id PK "UUID"
+        string email UK
+        datetime createdAt
     }
     
+    USER_PROFILE {
+        string id PK
+        string userId FK
+        string[] focusAreas "Identities & Goals"
+        string[] platforms "Monitored sites"
+    }
+
     CONTENT_LOG {
-        uuid id PK
+        string id PK
         string url
-        string contentType
+        string title
         boolean isConscious
-        int score
+        int score "0-100"
         string summary
         string dominantEmotion
+        int timeSpentSecs
     }
     
     DRIFT_SCORE {
+        string id PK
         float score
         string trend
-    }
-    
-    CIRCLE {
-        string name
-        string inviteCode
     }
 ```
 
@@ -123,47 +108,52 @@ erDiagram
 
 ## 🛠 Tech Stack
 
-- **AI & NLP Engine**: Python 3.11, FastAPI, HuggingFace (`sentence-transformers`), Qdrant Vector DB.
-- **Backend Infrastructure**: Node.js, Express, Prisma ORM, PostgreSQL, Redis.
-- **Frontend Dashboard**: React 18, Vite, Tailwind CSS (Strict Monochrome Apple/Linear Theme), Zustand.
-- **Extension Integration**: Chrome Manifest V3 side-panel and content scripts.
+- **Backend Infrastructure**: Node.js, Express, Prisma ORM, PostgreSQL.
+- **Frontend Dashboard**: React 18, Vite, Tailwind CSS (Strict Monochrome Apple/Linear Theme), Framer Motion, Recharts.
+- **Extension Integration**: Chrome Manifest V3 side-panel, content scripts, and background service workers.
+- **Integrations**: Google Gemini API, YouTube Search APIs.
 
 ---
 
-## 🚀 Local Setup
+## 🚀 Local Development Setup
 
 ### Prerequisites
 - Node.js 20+
-- Python 3.11+
-- Qdrant (Docker)
-- Redis
+- PostgreSQL (Local or Neon/Supabase)
 
-### 1. Python NLP Service (Core AI Engine)
-```bash
-cd cognify-nlp
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8001
-```
-
-### 2. Database & Express Backend
+### 1. Database & Express Backend
 ```bash
 cd backend
 npm install
-cp ../.env.example .env # Fill in DB credentials
+
+# Configure your environment variables
+cp .env.example .env 
+
+# Push the schema to your Postgres instance
 npx prisma db push
+npx prisma generate
+
+# Start the development server
 npm run dev
 ```
 
-### 3. React Frontend
+### 2. React Frontend
 ```bash
 cd frontend
 npm install
+
+# Start the Vite development server
 npm run dev
 ```
 
+### 3. Chrome Extension
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable **Developer mode** in the top right.
+3. Click **Load unpacked** and select the `/cognify-extension` directory in this repository.
+
+---
+
 ## 🔒 Security & Performance
-- **Zero-Paid APIs**: The entire NLP architecture is engineered to run free and fast using local models + free tier cloud GPUs.
-- **Concurrency Control**: Async data pipelines (`asyncio.gather`) prevent starvation during peak load.
-- **Input Validation**: Hardened endpoints using `pydantic` (Python) and `zod` (Node.js).
+- **Payload Optimization**: The Express backend limits payloads intelligently (up to 50MB) to allow bulk extension syncing without triggering `413 Payload Too Large` errors.
+- **Lightning Caching**: The recommendation engine uses smart RAM caching and single-threaded query aggregation to prevent CPU choking on lower-tier cloud environments (like Render Free Tier).
+- **Type-Safety**: End-to-end type safety enforced via TypeScript and Prisma Client.
