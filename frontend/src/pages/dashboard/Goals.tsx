@@ -153,7 +153,20 @@ const Goals = () => {
 };
 
 const GoalStrip = ({ goal }: { goal: string }) => {
-  const { data: recommendations, isLoading, refetch } = useRecommendations(goal, 24);
+  const [seed, setSeed] = useState(0);
+  const [excludeUrls, setExcludeUrls] = useState<string[]>([]);
+  
+  const { data: recommendations, isFetching } = useRecommendations(goal, 24, seed, excludeUrls.join(','));
+
+  const handleRefresh = () => {
+    if (recommendations) {
+      setExcludeUrls(prev => {
+        const newExcludes = [...prev, ...recommendations.map((r: any) => r.url)];
+        return Array.from(new Set(newExcludes)).slice(-150); // keep last 150 to prevent huge payload
+      });
+    }
+    setSeed(s => s + 1);
+  };
 
   return (
     <div className="space-y-8 mt-4">
@@ -162,14 +175,15 @@ const GoalStrip = ({ goal }: { goal: string }) => {
           <h2 className="text-lg font-medium text-white mb-1">Curated Content</h2>
         </div>
         <button 
-          onClick={() => refetch()} 
-          className="text-xs font-medium text-slate-400 hover:text-white flex items-center gap-2 transition-colors border border-[#1a1a1a] px-3 py-1.5 rounded-md hover:bg-[#0a0a0a]"
+          onClick={handleRefresh} 
+          disabled={isFetching}
+          className="text-xs font-medium text-slate-400 hover:text-white flex items-center gap-2 transition-colors border border-[#1a1a1a] px-3 py-1.5 rounded-md hover:bg-[#0a0a0a] disabled:opacity-50"
         >
-          <IconRefresh size={14} /> Refresh
+          <IconRefresh size={14} className={isFetching ? "animate-spin" : ""} /> Refresh
         </button>
       </div>
       
-      {isLoading ? (
+      {isFetching ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="w-full h-[320px]" />)}
         </div>

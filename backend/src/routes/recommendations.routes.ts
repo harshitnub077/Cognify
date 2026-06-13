@@ -24,38 +24,45 @@ router.get('/', requireAuth, async (req: any, res) => {
         throw new Error("NLP service returned empty recommendations, triggering fallback");
       }
     } catch (nlpError) {
-      console.log('NLP service unavailable, falling back to YouTube Search via Gemini query generation');
+      console.log('NLP service unavailable, skipping Gemini for speed, using direct yt-search');
       
-      const { GoogleGenerativeAI } = require('@google/generative-ai');
       const yts = require('yt-search');
-      const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
-      let searchQuery = goal;
+      const suffixes = ['', 'tutorial', 'explained', 'deep dive', 'masterclass', 'for beginners', 'advanced', 'tips', 'strategy', 'guide', 'in 10 minutes', 'course', 'examples'];
       
-      if (genAI) {
-        try {
-          const prompt = `You are a YouTube search expert. A user wants video recommendations for their personal goal: "${goal}".
-          Write a short, highly effective 3-4 word YouTube search query to find the best educational, motivational, or instructional videos for this goal.
-          Return ONLY the search query string, nothing else.`;
-          
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-          const result = await model.generateContent(prompt);
-          let text = result.response.text().trim();
-          if (text) searchQuery = text.replace(/["']/g, '');
-        } catch (e) {
-          console.error("Gemini query generation failed, using goal as fallback", e);
+      const seed = parseInt(req.query.seed) || 0;
+      let suffixIndex = seed % suffixes.length;
+      
+      let allVideos: any[] = [];
+      let maxAttempts = 3;
+      
+      // Keep searching with different suffixes until we get enough unique videos
+      while (allVideos.length < limit && maxAttempts > 0) {
+        const suffix = suffixes[suffixIndex];
+        const searchQuery = `${goal} ${suffix}`.trim();
+        const searchResults = await yts(searchQuery);
+        
+        let batch = searchResults.videos;
+        // Filter out completely any videos the user has already seen
+        batch = batch.filter((v: any) => !exclude_urls.some((url: string) => url.includes(v.videoId)));
+        
+        // Add to our main pool, making sure we don't duplicate within the pool itself
+        for (const v of batch) {
+          if (!allVideos.find(existing => existing.videoId === v.videoId)) {
+            allVideos.push(v);
+          }
         }
+        
+        suffixIndex = (suffixIndex + 1) % suffixes.length;
+        maxAttempts--;
       }
       
-      const searchResults = await yts(searchQuery);
-      let videos = searchResults.videos;
-      
-      // Shuffle the videos to provide variety on refresh
-      for (let i = videos.length - 1; i > 0; i--) {
+      // Shuffle the aggregated unique videos
+      for (let i = allVideos.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [videos[i], videos[j]] = [videos[j], videos[i]];
+        [allVideos[i], allVideos[j]] = [allVideos[j], allVideos[i]];
       }
       
-      const topVideos = videos.slice(0, limit);
+      const topVideos = allVideos.slice(0, limit);
       
       nlpResponseData = topVideos.map((v: any) => ({
         title: v.title,

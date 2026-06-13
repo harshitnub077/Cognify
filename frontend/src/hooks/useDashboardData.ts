@@ -63,11 +63,11 @@ export const useSemanticSearch = (query: string) => {
   });
 };
 
-export const useRecommendations = (goal: string, limit: number = 8) => {
+export const useRecommendations = (goal: string, limit: number = 8, seed: number = 0, exclude: string = '') => {
   return useQuery({
-    queryKey: ['recommendations', goal, limit],
+    queryKey: ['recommendations', goal, limit, seed, exclude],
     queryFn: async () => {
-      const res = await api.get('/recommendations', { params: { goal, limit, _t: Date.now() } });
+      const res = await api.get('/recommendations', { params: { goal, limit, seed, exclude, _t: Date.now() } });
       return res.data.data;
     },
     staleTime: 5 * 60 * 1000,
