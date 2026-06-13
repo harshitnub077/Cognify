@@ -55,17 +55,14 @@ export const RecommendationCard = ({ item, isBookmarked: initialBookmarked = fal
   const isPending = addBookmark.isPending || removeBookmark.isPending;
 
   return (
-    <motion.div
+    <motion.a
+      href={videoUrl || '#'}
+      target="_blank"
+      rel="noopener noreferrer"
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      onClick={() => { 
-        let targetUrl = videoUrl;
-        if (targetUrl) {
-          if (!targetUrl.startsWith('http')) {
-            targetUrl = `https://${targetUrl}`;
-          }
-          window.open(targetUrl, '_blank'); 
-        }
+      onClick={(e) => {
+        if (!videoUrl) e.preventDefault();
       }}
       className="group flex flex-col w-full bg-[#0a0a0a] border border-[#1a1a1a] rounded-lg overflow-hidden cursor-pointer hover:border-[#333] transition-colors"
     >
@@ -137,6 +134,6 @@ export const RecommendationCard = ({ item, isBookmarked: initialBookmarked = fal
           </h4>
         </div>
       </div>
-    </motion.div>
+    </motion.a>
   );
 };

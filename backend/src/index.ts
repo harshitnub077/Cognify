@@ -65,7 +65,7 @@ app.use('/api/user', userRoutes);
 
 // Sentry.setupExpressErrorHandler(app);
 
-app.listen(PORT, () => {
+app.listen(PORT as number, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
