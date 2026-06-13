@@ -27,6 +27,7 @@ const Dashboard = () => {
   const [url, setUrl] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [hasDownloadedExtension, setHasDownloadedExtension] = useState(() => localStorage.getItem('cognify_extension_downloaded') === 'true');
 
   const stats = dashboardData?.stats;
   const driftScore = driftData?.score || 0;
@@ -140,25 +141,31 @@ const Dashboard = () => {
     <div className="space-y-8 pb-24 w-full max-w-[1600px] mx-auto px-4 md:px-6">
 
       {/* Extension Banner */}
-      <div className="bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f] border border-[#2a2a2a] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-4">
-          <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/10 text-primary animate-pulse">
-            <IconInfoCircle size={24} />
+      {!hasDownloadedExtension && (
+        <div className="bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f] border border-[#2a2a2a] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl mb-8">
+          <div className="flex items-center gap-4">
+            <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/10 text-primary animate-pulse">
+              <IconInfoCircle size={24} />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-white text-[15px] mb-1">To access the dashboard analytics, you need the extension.</h3>
+              <p className="text-sm text-slate-400 font-medium">Without the Cognify extension, your content diet and analytics will never update.</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-display font-bold text-white text-[15px] mb-1">To access the dashboard analytics, you need the extension.</h3>
-            <p className="text-sm text-slate-400 font-medium">Without the Cognify extension, your content diet and analytics will never update.</p>
-          </div>
+          <a 
+            href="/cognify-extension.zip" 
+            download="cognify-extension.zip"
+            onClick={() => {
+              localStorage.setItem('cognify_extension_downloaded', 'true');
+              setHasDownloadedExtension(true);
+            }}
+            className="w-full sm:w-auto whitespace-nowrap px-6 py-3 bg-white text-black text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)] group"
+          >
+            <IconDownload size={18} className="group-hover:-translate-y-0.5 transition-transform" /> 
+            Download Extension
+          </a>
         </div>
-        <a 
-          href="/cognify-extension.zip" 
-          download="cognify-extension.zip"
-          className="w-full sm:w-auto whitespace-nowrap px-6 py-3 bg-white text-black text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)] group"
-        >
-          <IconDownload size={18} className="group-hover:-translate-y-0.5 transition-transform" /> 
-          Download Extension
-        </a>
-      </div>
+      )}
       
       {/* Header & Command Bar */}
       <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-[#1a1a1a] pb-6">
