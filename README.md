@@ -1,55 +1,34 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/harshitnub077/Cognify/main/frontend/public/logo.png" alt="Cognify Logo" width="120" />
-  <h1>Cognify 🧠</h1>
-  <p><strong>Agentic Content Intelligence & Digital Alignment Platform</strong></p>
-  <p>
-    <img src="https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge&logo=vercel" alt="Status" />
-    <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
-    <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  </p>
-</div>
+# Cognify
 
-<br/>
+**Agentic Content Intelligence & Semantic Alignment Architecture**
 
-Cognify is an AI-powered, conscious content intelligence platform engineered to cure mindless scrolling. It operates as an **autonomous Agentic RAG system**, actively analyzing your digital diet (YouTube, Web) and providing real-time, personalized reality checks to align your content consumption with your stated life goals.
-
-The system enforces a premium, minimalist monochrome aesthetic across the dashboard to reduce cognitive overload, eliminate gamification distractions, and enforce pure focus.
-
----
-
-## ✨ Key Features
-
-- **🛡️ Real-Time Distraction Blocking:** Seamless Chrome Extension that analyzes YouTube sidebars and DOM elements, intelligently replacing clickbait with hyper-relevant, goal-oriented content.
-- **🧠 Autonomous Agentic RAG:** Leverages LLMs to grade your content consumption against your life goals (e.g., "UPSC Preparation"), generating a brutal, honest "Consciousness Score".
-- **⚡ Lightning-Fast Content Engine:** Uses an optimized single-core caching architecture to instantly fetch, rank, and serve YouTube tutorials, masterclasses, and courses directly to your dashboard.
-- **📈 Deep Analytics Dashboard:** Visualizes your "Digital Drift," focus streaks, reclaimed time, and emotional alignment across beautiful, Recharts-powered graphs.
+Cognify is a sophisticated, AI-driven content intelligence platform engineered to counteract engagement-optimized algorithms. Designed as an autonomous Agentic RAG (Retrieval-Augmented Generation) system, Cognify operates as a man-in-the-middle for content consumption, actively parsing, semantically embedding, and scoring digital content streams against predefined ontological user goals.
 
 ---
 
 ## 🏗 System Architecture & Workflows
 
-Cognify utilizes a sophisticated microservice architecture spanning a Chrome extension, a high-concurrency Node.js Express backend, and PostgreSQL for robust, relational persistence.
+Cognify utilizes a distributed microservice architecture comprising an edge-injected Chrome extension, a high-concurrency Node.js/Express API gateway, and a highly optimized relational persistence layer via PostgreSQL.
 
-### Data Flow Diagram
+### Data Flow & Inference Pipeline
 
 ```mermaid
 graph TD
-    User([User]) --> |Browses YouTube| Ext[Cognify Chrome Extension]
+    User([Client]) --> |DOM Mutation Observer| Ext[Manifest V3 Extension]
     
     subgraph Browser Context
-        Ext --> |Extracts DOM & Video Meta| ExtBg[Service Worker]
-        ExtBg --> |Injects Relevant UI| DOM[YouTube UI]
+        Ext --> |Extracts Metadata & Transcripts| ExtBg[Service Worker]
+        ExtBg --> |Injects Mutated DOM Elements| DOM[Shadow DOM UI]
     end
     
-    subgraph Cognify Cloud
-        ExtBg --> |Syncs Data| API[Node.js / Express API]
-        API --> |Validates Payload| Auth[JWT Middleware]
-        Auth --> |Caches Goals| YTScraper[Goal-Oriented YT Caching Engine]
-        Auth --> |Stores Logs| DB[(PostgreSQL)]
+    subgraph Core Infrastructure
+        ExtBg --> |REST / JSON Payload| API[Express API Gateway]
+        API --> |JWT Auth & Rate Limiting| Auth[Middleware]
+        Auth --> |In-Memory RAM Cache Pool| YTScraper[Query Aggregator Engine]
+        Auth --> |Prisma ORM writes| DB[(PostgreSQL)]
     end
     
-    User --> |Views Progress| Dashboard[React + Vite Frontend]
+    User --> |Visualizes Aggregations| Dashboard[React + Vite Frontend]
     Dashboard <--> API
 ```
 
