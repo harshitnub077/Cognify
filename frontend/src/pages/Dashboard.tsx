@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   IconTarget, IconBrain, IconFlame, IconActivity,
@@ -27,7 +27,34 @@ const Dashboard = () => {
   const [url, setUrl] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
-  const [hasDownloadedExtension, setHasDownloadedExtension] = useState(() => localStorage.getItem('cognify_extension_downloaded') === 'true');
+  
+  // Extension auto-detection
+  const [extensionInstalled, setExtensionInstalled] = useState(true); // Assume true initially to avoid flicker
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    let checkCount = 0;
+    const interval = setInterval(() => {
+      const isInstalled = !!document.getElementById('cognify-extension-installed');
+      setExtensionInstalled(isInstalled);
+      
+      if (isInstalled) {
+        setIsModalOpen(false); // Close modal automatically if they install it while open
+        clearInterval(interval);
+      }
+      
+      checkCount++;
+      // Stop aggressive polling after 10 seconds if not found, but keep a slow fallback just in case
+      if (checkCount > 20 && !isInstalled) {
+        clearInterval(interval);
+        setInterval(() => {
+          setExtensionInstalled(!!document.getElementById('cognify-extension-installed'));
+        }, 5000);
+      }
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const stats = dashboardData?.stats;
   const driftScore = driftData?.score || 0;
@@ -140,32 +167,30 @@ const Dashboard = () => {
   return (
     <div className="space-y-8 pb-24 w-full max-w-[1600px] mx-auto px-4 md:px-6">
 
-      {/* Extension Banner */}
-      {!hasDownloadedExtension && (
-        <div className="bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f] border border-[#2a2a2a] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl mb-8">
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/10 text-primary animate-pulse">
-              <IconInfoCircle size={24} />
-            </div>
-            <div>
-              <h3 className="font-display font-bold text-white text-[15px] mb-1">To access the dashboard analytics, you need the extension.</h3>
-              <p className="text-sm text-slate-400 font-medium">Without the Cognify extension, your content diet and analytics will never update.</p>
-            </div>
-          </div>
-          <a 
-            href="/cognify-extension.zip" 
-            download="cognify-extension.zip"
-            onClick={() => {
-              localStorage.setItem('cognify_extension_downloaded', 'true');
-              setHasDownloadedExtension(true);
-            }}
-            className="w-full sm:w-auto whitespace-nowrap px-6 py-3 bg-white text-black text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)] group"
+      {/* Premium Extension Alert Banner */}
+      <AnimatePresence>
+        {!extensionInstalled && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 overflow-hidden"
           >
-            <IconDownload size={18} className="group-hover:-translate-y-0.5 transition-transform" /> 
-            Download Extension
-          </a>
-        </div>
-      )}
+            <div className="flex items-center gap-3 text-red-400">
+              <IconInfoCircle size={20} className="shrink-0" />
+              <p className="text-sm font-medium">
+                <strong className="text-red-300">Action Required:</strong> Cognify Extension is not detected. Your analytics will not update.
+              </p>
+            </div>
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm font-bold rounded-lg transition-colors whitespace-nowrap"
+            >
+              Fix Now
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Header & Command Bar */}
       <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-[#1a1a1a] pb-6">
@@ -429,6 +454,64 @@ const Dashboard = () => {
           </div>
         )}
       </section>
+      {/* Installation Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setIsModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-[#111] border border-[#222] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl"
+            >
+              <div className="p-6 border-b border-[#222] flex items-center justify-between">
+                <h2 className="text-xl font-display font-bold text-white flex items-center gap-2">
+                  <IconTarget className="text-primary" /> Install Extension
+                </h2>
+                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
+                  <IconX size={20} />
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                <p className="text-slate-300 text-sm">
+                  Cognify requires a browser extension to intercept distractions on YouTube and Instagram in real-time. Without it, the dashboard cannot analyze your content diet.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex gap-4 items-start">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">1</div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm mb-1">Download the Package</h4>
+                      <a href="/cognify-extension.zip" download className="inline-flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-bold rounded-lg hover:bg-slate-200 transition-colors">
+                        <IconDownload size={16} /> Download .zip
+                      </a>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 items-start">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">2</div>
+                    <div>
+                      <h4 className="font-bold text-white text-sm mb-1">Extract & Load</h4>
+                      <p className="text-sm text-slate-400">Extract the zip. Go to <code className="bg-[#222] px-1 rounded text-primary">chrome://extensions</code>, enable "Developer mode", and click "Load unpacked". Select the extracted folder.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 p-4 bg-primary/10 rounded-xl flex items-center gap-3 border border-primary/20">
+                  <IconLoader2 className="animate-spin text-primary" size={20} />
+                  <p className="text-sm text-primary font-medium">Waiting for extension to connect...</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

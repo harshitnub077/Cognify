@@ -47,3 +47,9 @@ window.addEventListener('storage', (e) => {
 
 // Poll every 2 seconds to catch SPA login/logout
 setInterval(syncToken, 2000);
+
+// Inject an invisible DOM marker to notify the React frontend that the extension is installed
+const marker = document.createElement('div');
+marker.id = 'cognify-extension-installed';
+marker.style.display = 'none';
+document.body.appendChild(marker);
