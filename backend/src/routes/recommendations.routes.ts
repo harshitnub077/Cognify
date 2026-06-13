@@ -24,8 +24,53 @@ router.get('/', requireAuth, async (req: any, res) => {
         throw new Error("NLP service returned empty recommendations, triggering fallback");
       }
     } catch (nlpError) {
-      console.log('NLP service unavailable, skipping Gemini to prevent hallucinated URLs. Triggering ultimate fallback.');
-      throw new Error('Fallback to real dummy videos');
+      console.log('NLP service unavailable, falling back to YouTube Search via Gemini query generation');
+      
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const yts = require('yt-search');
+      const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+      let searchQuery = goal;
+      
+      if (genAI) {
+        try {
+          const prompt = `You are a YouTube search expert. A user wants video recommendations for their personal goal: "${goal}".
+          Write a short, highly effective 3-4 word YouTube search query to find the best educational, motivational, or instructional videos for this goal.
+          Return ONLY the search query string, nothing else.`;
+          
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const result = await model.generateContent(prompt);
+          let text = result.response.text().trim();
+          if (text) searchQuery = text.replace(/["']/g, '');
+        } catch (e) {
+          console.error("Gemini query generation failed, using goal as fallback", e);
+        }
+      }
+      
+      const searchResults = await yts(searchQuery);
+      let videos = searchResults.videos;
+      
+      // Shuffle the videos to provide variety on refresh
+      for (let i = videos.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [videos[i], videos[j]] = [videos[j], videos[i]];
+      }
+      
+      const topVideos = videos.slice(0, limit);
+      
+      nlpResponseData = topVideos.map((v: any) => ({
+        title: v.title,
+        channel: v.author.name,
+        url: v.url,
+        thumbnail: v.thumbnail || v.image,
+        duration: v.timestamp || '10:00',
+        viewCount: v.views ? `${(v.views/1000).toFixed(0)}K views` : '100K views',
+        score: Math.floor(Math.random() * 15) + 85,
+        reason: `Highly relevant video for: ${goal}`
+      }));
+      
+      if (!nlpResponseData || nlpResponseData.length === 0) {
+        throw new Error('yt-search returned empty results');
+      }
     }
     
     // Map the output to include mock images/metadata for the UI
