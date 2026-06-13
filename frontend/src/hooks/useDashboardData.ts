@@ -67,7 +67,7 @@ export const useRecommendations = (goal: string, limit: number = 8) => {
   return useQuery({
     queryKey: ['recommendations', goal, limit],
     queryFn: async () => {
-      const res = await api.get('/recommendations', { params: { goal, limit } });
+      const res = await api.get('/recommendations', { params: { goal, limit, _t: Date.now() } });
       return res.data.data;
     },
     staleTime: 5 * 60 * 1000,
