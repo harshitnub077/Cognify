@@ -46,6 +46,6 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     if (error.message?.includes('SUPABASE_URL')) {
       return res.status(503).json({ error: 'Authentication service not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env' });
     }
-    res.status(500).json({ error: 'Internal server error during authentication' });
+    res.status(500).json({ error: 'Internal server error during authentication', details: error.message, stack: error.stack });
   }
 };
