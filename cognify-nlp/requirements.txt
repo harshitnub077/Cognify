@@ -24,7 +24,7 @@ qdrant-client>=1.10.1           # local file-based Qdrant (zero cost)
 redis==5.0.6                   # optional — gracefully disabled if not running
 
 # ── Data ─────────────────────────────────────────────────────────────────────
-pydantic==2.7.4
+pydantic>=2.13.4
 python-dotenv==1.0.1
 requests>=2.34.2
 huggingface-hub>=0.23.4
