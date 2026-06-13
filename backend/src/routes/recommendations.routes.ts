@@ -30,35 +30,45 @@ router.get('/', requireAuth, async (req: any, res) => {
     const cacheAge = cache.get(goal)?.timestamp ? Date.now() - cache.get(goal).timestamp : Infinity;
     
     // Fetch if missing or older than 4 hours
-    if (!allVideos || allVideos.length === 0 || cacheAge > 4 * 60 * 60 * 1000) {
-      console.log(`[Recommendations] Fetching fresh YouTube pool for goal: ${goal}`);
-      
-      const queries = [
-        `${goal} masterclass`,
-        `${goal} tutorial`,
-        `${goal} course`,
-        `${goal} explained`
-      ];
-      
-      const searchResultsArray = await Promise.all(
-        queries.map(q => yts({ query: q, pages: 1 }))
-      );
+    const needsRefresh = cacheAge > 4 * 60 * 60 * 1000;
+    
+    if (!allVideos || allVideos.length === 0) {
+      console.log(`[Recommendations] Cache miss. Fetching fresh YouTube pool for goal: ${goal}`);
+      const suffixes = ['masterclass', 'tutorial', 'course', 'explained'];
+      const query = `${goal} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
+      const results = await yts({ query, pages: 1 });
       
       allVideos = [];
       const seenIds = new Set();
       
-      for (const results of searchResultsArray) {
-        for (const v of (results.videos || [])) {
-          if (!seenIds.has(v.videoId)) {
-            seenIds.add(v.videoId);
-            allVideos.push(v);
-          }
+      for (const v of (results.videos || [])) {
+        if (!seenIds.has(v.videoId)) {
+          seenIds.add(v.videoId);
+          allVideos.push(v);
         }
       }
       
       if (allVideos.length > 0) {
         cache.set(goal, { videos: allVideos, timestamp: Date.now() });
       }
+    } else if (needsRefresh) {
+      // Background refresh to keep it instantly fast
+      console.log(`[Recommendations] Cache stale. Background refreshing YouTube pool for goal: ${goal}`);
+      const suffixes = ['masterclass', 'tutorial', 'course', 'explained'];
+      const query = `${goal} ${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
+      yts({ query, pages: 1 }).then((results: any) => {
+        let newVideos: any[] = [];
+        const seenIds = new Set();
+        for (const v of (results.videos || [])) {
+          if (!seenIds.has(v.videoId)) {
+            seenIds.add(v.videoId);
+            newVideos.push(v);
+          }
+        }
+        if (newVideos.length > 0) {
+          cache.set(goal, { videos: newVideos, timestamp: Date.now() });
+        }
+      }).catch((e: any) => console.error('Background refresh failed', e));
     }
     
     if (!allVideos || allVideos.length === 0) {
