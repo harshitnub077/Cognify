@@ -39,7 +39,7 @@ const Dashboard = () => {
     : "I want to improve my focus and learn new things.";
     
   // Fetch 24 to share the exact same React Query cache as Goals.tsx
-  const { data: recData } = useRecommendations(primaryGoal, 24);
+  const { data: recData, isLoading: recLoading } = useRecommendations(primaryGoal, 24);
   const recommendations = Array.isArray(recData) ? recData.slice(0, 8) : [];
 
 
@@ -377,7 +377,15 @@ const Dashboard = () => {
           </button>
         </div>
         
-        {recommendations.length > 0 ? (
+        {recLoading ? (
+          <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="snap-start shrink-0 w-[280px] md:w-[320px]">
+                <Skeleton className="h-[280px] w-full" />
+              </div>
+            ))}
+          </div>
+        ) : recommendations.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-6 pt-2 custom-scrollbar snap-x">
             {recommendations?.map((item: any) => (
               <div key={item.id} className="snap-start shrink-0 w-[280px] md:w-[320px]">
