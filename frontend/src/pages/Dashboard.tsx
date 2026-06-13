@@ -16,6 +16,7 @@ import { RecommendationCard } from '../components/RecommendationCard';
 import { cn } from '../lib/utils';
 import api from '../lib/api';
 import { format, subDays, isSameDay } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const { data: dashboardData, isLoading } = useDashboardStats();
@@ -425,9 +426,9 @@ const Dashboard = () => {
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xs font-medium text-slate-500">Curated for You</h3>
-          <button className="text-xs font-medium text-slate-500 hover:text-white transition-colors flex items-center gap-1">
+          <Link to="/dashboard/goals" className="text-xs font-medium text-slate-500 hover:text-white transition-colors flex items-center gap-1">
             View all <IconArrowRight size={14} />
-          </button>
+          </Link>
         </div>
         
         {recLoading ? (

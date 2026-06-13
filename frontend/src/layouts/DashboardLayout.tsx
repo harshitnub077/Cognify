@@ -56,16 +56,21 @@ export const DashboardLayout = () => {
   const { data: achievementData } = useAchievements();
   const { data: profile } = useUserProfile();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
   
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Explorer';
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setShowUserMenu(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -253,13 +258,74 @@ export const DashboardLayout = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              className="relative flex items-center justify-center w-10 h-10 rounded-lg text-surface-muted hover:text-white hover:bg-[#222] transition-colors"
-              aria-label="Notifications"
-            >
-              <IconBell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-surface" />
-            </button>
+            <div className="relative" ref={notifRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={cn(
+                  "relative flex items-center justify-center w-10 h-10 rounded-lg transition-colors",
+                  showNotifications ? "bg-[#222] text-white" : "text-surface-muted hover:text-white hover:bg-[#222]"
+                )}
+                aria-label="Notifications"
+              >
+                <IconBell size={20} />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-surface" />
+              </button>
+
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-[#111] border border-slate-200 dark:border-[#222] rounded-xl shadow-2xl z-50 overflow-hidden"
+                  >
+                    <div className="px-4 py-3 border-b border-slate-200 dark:border-[#222] flex items-center justify-between">
+                      <h3 className="font-semibold text-sm">Notifications</h3>
+                      <button className="text-xs text-primary hover:underline">Mark all read</button>
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto">
+                      <div className="p-4 border-b border-slate-200 dark:border-[#222] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors cursor-pointer">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <IconTarget size={16} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Goal Tracking Active</p>
+                            <p className="text-xs text-slate-500 mt-0.5">We're actively monitoring your YouTube feed for goal-aligned content.</p>
+                            <p className="text-[10px] text-slate-400 mt-1">Just now</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 border-b border-slate-200 dark:border-[#222] hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors cursor-pointer">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                            <IconSparkles size={16} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Extension Synced</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Your browser extension is connected and streaming data.</p>
+                            <p className="text-[10px] text-slate-400 mt-1">2h ago</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition-colors cursor-pointer">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                            <IconBrain size={16} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">New Neural Pathways</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Your curated dashboard has been refreshed with new learning videos.</p>
+                            <p className="text-[10px] text-slate-400 mt-1">1d ago</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
 
