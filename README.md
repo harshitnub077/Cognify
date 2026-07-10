@@ -61,7 +61,6 @@ erDiagram
     USER_PROFILE {
         string id PK
         string userId FK
-        string[] focusAreas "Identities & Goals"
         string[] platforms "Monitored sites"
     }
 
