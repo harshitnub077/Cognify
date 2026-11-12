@@ -130,8 +130,3 @@ npm run dev
 3. Click **Load unpacked** and select the `/cognify-extension` directory in this repository.
 
 ---
-
-## 🔒 Security & Performance
-- **Payload Optimization**: The Express backend limits payloads intelligently (up to 50MB) to allow bulk extension syncing without triggering `413 Payload Too Large` errors.
-- **Lightning Caching**: The recommendation engine uses smart RAM caching and single-threaded query aggregation to prevent CPU choking on lower-tier cloud environments (like Render Free Tier).
-- **Type-Safety**: End-to-end type safety enforced via TypeScript and Prisma Client.
